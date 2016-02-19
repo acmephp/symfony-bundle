@@ -1,10 +1,7 @@
 Acme PHP Symfony Bundle
 =======================
 
-[![Build Status](https://travis-ci.org/acmephp/cli.svg?branch=master)](https://travis-ci.org/acmephp/cli)
-[![StyleCI](https://styleci.io/repos/51296588/shield)](https://styleci.io/repos/51296588)
-
-> Note this bundle is in active development (it is not ready for the moment).
+> Note this bundle is in **active development (it is not ready for the moment)**.
 
 The ACME protocol is a protocol defined by the Let's Encrypt Certificate Authority.
 You can see the complete specification on https://letsencrypt.github.io/acme-spec/.
