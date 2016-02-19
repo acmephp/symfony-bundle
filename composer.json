@@ -1,0 +1,16 @@
+{
+    "name": "acmephp/symfony-bundle",
+    "license": "MIT",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "AcmePhp\\Bundle": ""
+        }
+    },
+    "require": {
+        "php": ">=5.5.0",
+        "ext-openssl": "*",
+        "symfony/symfony": "^2.8.2|^3.0.2",
+        "acmephp/cli": "1.0.x-dev"
+    }
+}
