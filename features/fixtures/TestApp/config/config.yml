@@ -1,0 +1,15 @@
+imports:
+    - { resource: acme.yml }
+
+framework:
+    secret: "public"
+    router:
+        resource: "%kernel.root_dir%/config/routing.yml"
+
+services:
+  test.ca.boulder:
+    class: TestAppBundle\CertificateAuthority\Configuration\BoulderConfiguration
+    public: false
+    tags:
+      - name: acme_php.certificate_authority
+        alias: boulder

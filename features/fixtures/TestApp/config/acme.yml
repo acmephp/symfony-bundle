@@ -1,0 +1,12 @@
+acme_php:
+    certificate_dir: '%kernel.root_dir%/certs'
+    certificate_authority: boulder
+    contact_email: test@acmephp.com
+    default_distinguished_name:
+        country: FR
+        state: France
+        locality: Paris
+        organization_name: acme
+        organization_unit_name: QA
+    domains:
+        acmephp.fr: ~

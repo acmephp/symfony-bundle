@@ -1,16 +1,153 @@
 <?xml version="1.0" ?>
 
 <container xmlns="http://symfony.com/schema/dic/services"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
-    <!--
     <services>
-        <service id="acme_php.example" class="AcmePhp\Bundle\Example">
-            <argument type="service" id="service_id" />
-            <argument>plain_value</argument>
-            <argument>%parameter_name%</argument>
+        <!-- Certificate Services -->
+        <service id="acme_php.certificate.requester" class="AcmePhp\Bundle\Acme\Certificate\Requester">
+            <argument type="service" id="acme_php.core.acme_client"/>
+            <argument type="service" id="acme_php.key_pair.domain_provider_factory"/>
+            <argument type="service" id="acme_php.challenge.challenger"/>
+            <argument type="service" id="acme_php.certificate.repository"/>
+            <argument type="service" id="event_dispatcher"/>
+            <call method="setLogger">
+                <argument type="service" id="acme_php.logger"/>
+            </call>
+        </service>
+
+        <service id="acme_php.certificate.repository" class="AcmePhp\Bundle\Acme\Certificate\CertificateRepository"
+                 public="false">
+            <argument type="service" id="acme_php.certificate.storage_factory"/>
+            <argument>%acme_php.certificate.formatters%</argument>
+        </service>
+
+        <service id="acme_php.certificate.storage_factory"
+                 class="AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorageFactory" public="false">
+            <argument type="service" id="acme_php.tools.filesystem"/>
+            <argument>%acme_php.certificate_dir%/domains</argument>
+            <argument>%acme_php.certificate_dir%/domains-backup</argument>
+        </service>
+
+        <service class="AcmePhp\Bundle\EventListener\CertificatePersisterListener">
+            <argument type="service" id="acme_php.certificate.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Formatters -->
+        <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\CertificateFormatter" public="false">
+            <tag name="acme_php.certificate_formatter"/>
+        </service>
+        <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\ChainFormatter" public="false">
+            <argument type="service" id="acme_php.core.certificate_authority"/>
+            <tag name="acme_php.certificate_formatter"/>
+        </service>
+        <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\FullChainFormatter" public="false">
+            <argument type="service" id="acme_php.core.certificate_authority"/>
+            <tag name="acme_php.certificate_formatter"/>
+        </service>
+        <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\CombinedFormatter" public="false">
+            <argument type="service" id="acme_php.core.certificate_authority"/>
+            <tag name="acme_php.certificate_formatter"/>
+        </service>
+
+        <!-- KeyPair -->
+        <service id="acme_php.key_pair.domain_provider_factory"
+                 class="AcmePhp\Bundle\Acme\KeyPair\DomainKeyPairProviderFactory" public="false">
+            <argument type="service" id="acme_php.core.key_pair_manager"/>
+            <argument type="service" id="acme_php.key_pair.domain_storage_factory"/>
+            <call method="setLogger">
+                <argument type="service" id="acme_php.logger"/>
+            </call>
+        </service>
+
+        <service id="acme_php.key_pair.domain_storage_factory"
+                 class="AcmePhp\Bundle\Acme\KeyPair\Storage\DomainKeyPairStorageFactory" public="false">
+            <argument type="service" id="acme_php.tools.filesystem"/>
+            <argument type="service" id="acme_php.core.key_pair_manager"/>
+            <argument>%acme_php.certificate_dir%/domains</argument>
+        </service>
+
+        <service id="acme_php.key_pair.account_provider"
+                 class="AcmePhp\Bundle\Acme\KeyPair\AccountKeyPairProvider"
+                 public="false">
+            <argument type="service" id="acme_php.core.key_pair_manager"/>
+            <argument type="service">
+                <service class="AcmePhp\Bundle\Acme\KeyPair\Storage\KeyPairStorage">
+                    <argument type="service" id="acme_php.tools.filesystem"/>
+                    <argument type="service" id="acme_php.core.key_pair_manager"/>
+                    <argument>%acme_php.certificate_dir%/account</argument>
+                </service>
+            </argument>
+            <argument type="service" id="acme_php.core.acme_client_factory"/>
+            <argument>%acme_php.contact_email%</argument>
+            <call method="setLogger">
+                <argument type="service" id="acme_php.logger"/>
+            </call>
+        </service>
+
+        <!-- Challenge -->
+        <service id="acme_php.challenge.challenger" class="AcmePhp\Bundle\Acme\Domain\Challenger">
+            <argument type="service" id="acme_php.core.acme_client"/>
+            <argument type="service" id="event_dispatcher"/>
+        </service>
+        <service class="AcmePhp\Bundle\EventListener\ChallengePersisterListener">
+            <argument type="service" id="acme_php.challenge.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Core -->
+        <service id="acme_php.core.key_pair_manager" class="AcmePhp\Core\Ssl\KeyPairManager"/>
+        <service id="acme_php.core.acme_client" class="AcmePhp\Core\AcmeClient" public="false">
+            <factory service="acme_php.core.acme_client_factory" method="createAcmeClient"/>
+            <argument type="service">
+                <service class="AcmePhp\Core\Ssl\KeyPair">
+                    <factory service="acme_php.key_pair.account_provider" method="getOrCreateKeyPair"/>
+                </service>
+            </argument>
+        </service>
+
+        <service id="acme_php.core.acme_client_factory" class="AcmePhp\Bundle\Acme\CertificateAuthority\ClientFactory"
+                 public="false">
+            <argument type="service" id="acme_php.core.certificate_authority"/>
+            <call method="setLogger">
+                <argument type="service" id="acme_php.logger"/>
+            </call>
+        </service>
+
+        <!-- Certificate Autorities -->
+        <service class="AcmePhp\Bundle\Acme\CertificateAuthority\Configuration\LetsEncryptConfiguration" public="false">
+            <tag name="acme_php.certificate_authority" alias="letsencrypt"/>
+        </service>
+
+        <!-- Tools -->
+        <service id="acme_php.tools.filesystem" class="Symfony\Component\Filesystem\Filesystem" public="false"/>
+
+        <!-- DomainConfiguration Loaders -->
+        <service class="AcmePhp\Bundle\Acme\Domain\Loader\ArrayLoader" public="false">
+            <argument>%acme_php.domains_configurations%</argument>
+            <tag name="acme_php.domains_configurations_loader"/>
+        </service>
+        <service id="acme_php.domains_configurations.loader"
+                 class="AcmePhp\Bundle\Acme\Domain\Loader\LoaderChain">
+        </service>
+
+        <!-- Log -->
+        <service id="acme_php.logger.null" class="Psr\Log\NullLogger"/>
+        <service class="AcmePhp\Bundle\EventListener\LogCommandListener">
+            <argument type="service" id="acme_php.logger"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Http challenge Handler -->
+        <service id="acme_php.challenge.loader" class="AcmePhp\Bundle\Routing\Loader" decorates="routing.loader">
+            <argument type="service" id="acme_php.challenge.loader.inner"/>
+            <argument type="service" id="acme_php.core.certificate_authority"/>
+        </service>
+        <service id="acme_php.challenge.repository" class="AcmePhp\Bundle\Acme\Domain\ChallengeRepository">
+            <argument type="service" id="filesystem"/>
+            <argument>%acme_php.certificate_dir%/challenges</argument>
         </service>
     </services>
-    -->
 </container>
