@@ -1,2 +1,9 @@
 /composer.phar
+/composer.lock
 /vendor/
+/.php_cs.cache
+/bin/*
+/build/*
+/features/fixtures/TestApp/cache
+/features/fixtures/TestApp/logs
+/features/fixtures/TestApp/certs

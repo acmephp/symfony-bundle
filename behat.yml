@@ -1,0 +1,18 @@
+default:
+  suites:
+    default:
+      contexts:
+        - ConsoleContext:
+            kernel: '@kernel'
+        - FeatureContext:
+            acmeConfigPath: 'config/acme.yml'
+            filesystem: '@filesystem'
+            kernel: '@kernel'
+
+  extensions:
+    Behat\Symfony2Extension:
+      kernel:
+        env: "test"
+        debug: "true"
+        path: "features/fixtures/TestApp/AppKernel.php"
+        bootstrap: "features/fixtures/TestApp/bootstrap.php"

@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+// Debug only
+
+set_time_limit(0);
+
+require_once __DIR__.'/bootstrap.php';
+require_once __DIR__.'/AppKernel.php';
+
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Input\ArgvInput;
+
+$input = new ArgvInput();
+
+error_reporting(E_ALL & ~E_USER_DEPRECATED);
+
+$kernel = new AppKernel('test', false);
+$application = new Application($kernel);
+$application->run($input);
