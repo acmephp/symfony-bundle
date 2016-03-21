@@ -11,6 +11,7 @@
 
 namespace AcmePhp\Bundle\Acme\Certificate;
 
+use AcmePhp\Bundle\Acme\Certificate\Extractor\ExtractorInterface;
 use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorageFactory;
 use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
@@ -30,14 +31,18 @@ class CertificateRepository
     /** @var FormatterInterface[] */
     protected $formatters;
 
+    /** @var ExtractorInterface[] */
+    protected $extractors;
+
     /**
      * @param CertificateStorageFactory $storageFactory
      * @param FormatterInterface[]      $formatters
      */
-    public function __construct(CertificateStorageFactory $storageFactory, array $formatters)
+    public function __construct(CertificateStorageFactory $storageFactory, array $formatters, array $extractors)
     {
         $this->storageFactory = $storageFactory;
         $this->formatters = $formatters;
+        $this->extractors = $extractors;
     }
 
     /**
@@ -47,8 +52,11 @@ class CertificateRepository
      * @param Certificate         $certificate
      * @param KeyPair             $domainKeyPair
      */
-    public function persistCertificate(DomainConfiguration $configuration, Certificate $certificate, KeyPair $domainKeyPair)
-    {
+    public function persistCertificate(
+        DomainConfiguration $configuration,
+        Certificate $certificate,
+        KeyPair $domainKeyPair
+    ) {
         $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
         $storage->backup();
         foreach ($this->formatters as $formatter) {
@@ -86,5 +94,23 @@ class CertificateRepository
         }
 
         return true;
+    }
+
+    /**
+     * Return certificate's data.
+     *
+     * @param DomainConfiguration $configuration
+     *
+     * @return array
+     */
+    public function loadCertificate(DomainConfiguration $configuration)
+    {
+        $data = [];
+        $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
+        foreach ($this->extractors as $extractor) {
+            $data += $extractor->extract($storage->loadCertificateFile($extractor->getName()));
+        }
+
+        return $data;
     }
 }

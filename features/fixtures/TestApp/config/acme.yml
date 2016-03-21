@@ -9,4 +9,5 @@ acme_php:
         organization_name: acme
         organization_unit_name: QA
     domains:
-        acmephp.fr: ~
+        acmephp.com:
+            subject_alternative_names: [www.acmephp.com]

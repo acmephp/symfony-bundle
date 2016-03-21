@@ -12,6 +12,7 @@
 namespace AcmePhp\Bundle;
 
 use AcmePhp\Bundle\DependencyInjection\Compiler\CertificateAuthorityConfigurationPass;
+use AcmePhp\Bundle\DependencyInjection\Compiler\CertificateExtractorPass;
 use AcmePhp\Bundle\DependencyInjection\Compiler\CertificateFormatterPass;
 use AcmePhp\Bundle\DependencyInjection\Compiler\DomainConfigurationLoaderPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -34,5 +35,6 @@ class AcmePhpBundle extends Bundle
         $container->addCompilerPass(new DomainConfigurationLoaderPass());
         $container->addCompilerPass(new CertificateAuthorityConfigurationPass());
         $container->addCompilerPass(new CertificateFormatterPass());
+        $container->addCompilerPass(new CertificateExtractorPass());
     }
 }

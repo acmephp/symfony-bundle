@@ -12,7 +12,7 @@ Feature: Generate certificates
     """
     subject: acmephp.com
     selfSigned: false
-    sANs: [acmephp.com]
+    subjectAlternativeNames: [acmephp.com]
     """
 
   Scenario: generate a certificate with

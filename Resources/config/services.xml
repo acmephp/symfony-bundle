@@ -20,7 +20,8 @@
         <service id="acme_php.certificate.repository" class="AcmePhp\Bundle\Acme\Certificate\CertificateRepository"
                  public="false">
             <argument type="service" id="acme_php.certificate.storage_factory"/>
-            <argument>%acme_php.certificate.formatters%</argument>
+            <argument/>  <!-- Formatters -->
+            <argument/>  <!-- Extractors-->
         </service>
 
         <service id="acme_php.certificate.storage_factory"
@@ -50,6 +51,11 @@
         <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\CombinedFormatter" public="false">
             <argument type="service" id="acme_php.core.certificate_authority"/>
             <tag name="acme_php.certificate_formatter"/>
+        </service>
+
+        <!-- Extractors  -->
+        <service class="AcmePhp\Bundle\Acme\Certificate\Extractor\CertificateExtractor" public="false">
+            <tag name="acme_php.certificate_extractor"/>
         </service>
 
         <!-- KeyPair -->

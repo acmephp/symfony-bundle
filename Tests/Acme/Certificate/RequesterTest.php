@@ -75,7 +75,7 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
         $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(false);
-        $this->mockChallenger->challengeDomain($configuration)->shouldBeCalled();
+        $this->mockChallenger->challengeDomains([$dummyDomain])->shouldBeCalled();
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
         $this->mockKeyPairFactory->createKeyPairProvider($dummyDomain)->shouldBeCalled()->willReturn($mockKeyPairProvider);
@@ -97,13 +97,44 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
         $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
-        $this->mockChallenger->challengeDomain($configuration)->shouldNotBeCalled();
+        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn([
+            'subjectAlternativeNames' => [$dummyDomain],
+        ]);
+        $this->mockChallenger->challengeDomains()->shouldNotBeCalled();
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
         $this->mockKeyPairFactory->createKeyPairProvider($dummyDomain)->shouldBeCalled()->willReturn($mockKeyPairProvider);
         $mockKeyPairProvider->getOrCreateKeyPair()->shouldBeCalled()->willReturn($dummyDomainKeyPair);
 
         $this->mockClient->requestCertificate($dummyDomain, $dummyDomainKeyPair, $dummyCsr)->shouldBeCalled()->willReturn($dummyCertificate);
+
+        $result = $this->service->requestCertificate($configuration);
+        $this->assertSame($dummyCertificate, $result);
+    }
+
+    public function test requestCertificate triggers a new challenge for extra domains()
+    {
+        $dummyDomain = uniqid();
+        $dummyAlternativeDomain = uniqid();
+        $mockCsr = $this->prophesize(CSR::class);
+        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
+        $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
+
+        $mockCsr->getSubjectAlternativeNames()->willReturn([$dummyDomain, $dummyAlternativeDomain]);
+
+        $configuration = new DomainConfiguration($dummyDomain, $mockCsr->reveal());
+
+        $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
+        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn([
+            'subjectAlternativeNames' => [$dummyDomain],
+        ]);
+        $this->mockChallenger->challengeDomains([$dummyAlternativeDomain])->shouldBeCalled();
+
+        $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
+        $this->mockKeyPairFactory->createKeyPairProvider($dummyDomain)->shouldBeCalled()->willReturn($mockKeyPairProvider);
+        $mockKeyPairProvider->getOrCreateKeyPair()->shouldBeCalled()->willReturn($dummyDomainKeyPair);
+
+        $this->mockClient->requestCertificate($dummyDomain, $dummyDomainKeyPair, $mockCsr->reveal())->shouldBeCalled()->willReturn($dummyCertificate);
 
         $result = $this->service->requestCertificate($configuration);
         $this->assertSame($dummyCertificate, $result);
@@ -119,6 +150,9 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
         $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
+        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn([
+            'subjectAlternativeNames' => [$dummyDomain],
+        ]);
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
         $this->mockKeyPairFactory->createKeyPairProvider($dummyDomain)->shouldBeCalled()->willReturn($mockKeyPairProvider);
@@ -143,6 +177,9 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
         $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
+        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn([
+            'subjectAlternativeNames' => [$dummyDomain],
+        ]);
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
         $this->mockKeyPairFactory->createKeyPairProvider($dummyDomain)->shouldBeCalled()->willReturn($mockKeyPairProvider);

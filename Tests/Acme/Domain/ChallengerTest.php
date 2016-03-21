@@ -12,11 +12,9 @@
 namespace AcmePhp\Bundle\Tests\Acme\Domain;
 
 use AcmePhp\Bundle\Acme\Domain\Challenger;
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Bundle\Event\ChallengeEvent;
 use AcmePhp\Core\AcmeClient;
 use AcmePhp\Core\Protocol\Challenge;
-use AcmePhp\Core\Ssl\CSR;
 use Prophecy\Argument;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -47,23 +45,19 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
     public function test challengeDomain requests and checks the domain()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
         $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
 
-        $dummyConfiguration = new DomainConfiguration($dummyDomain, $dummyCsr);
         $this->mockClient->requestChallenge($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
         $this->mockClient->checkChallenge($dummyChallenge)->shouldBeCalled();
 
-        $this->service->challengeDomain($dummyConfiguration);
+        $this->service->challengeDomain($dummyDomain);
     }
 
     public function test challengeDomain triggers events()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
         $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
 
-        $dummyConfiguration = new DomainConfiguration($dummyDomain, $dummyCsr);
         $this->mockClient->requestChallenge($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
         $this->mockClient->checkChallenge($dummyChallenge)->shouldBeCalled();
 
@@ -86,7 +80,7 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
             return true;
         }))->shouldBeCalled();
 
-        $this->service->challengeDomain($dummyConfiguration);
+        $this->service->challengeDomain($dummyDomain);
     }
 
     /**
@@ -95,10 +89,8 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
     public function test challengeDomain triggers rejected event()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
         $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
 
-        $dummyConfiguration = new DomainConfiguration($dummyDomain, $dummyCsr);
         $this->mockClient->requestChallenge($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
         $this->mockClient->checkChallenge($dummyChallenge)->shouldBeCalled()->willThrow(new \Exception());
 
@@ -122,6 +114,6 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
             return true;
         }))->shouldBeCalled();
 
-        $this->service->challengeDomain($dummyConfiguration);
+        $this->service->challengeDomain($dummyDomain);
     }
 }

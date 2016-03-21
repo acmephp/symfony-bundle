@@ -40,19 +40,32 @@ class Challenger
     }
 
     /**
-     * Request and check a domain.
+     * Request and check a list of domain.
      *
      * @param DomainConfiguration $configuration
      *
      * @throws \Exception
      */
-    public function challengeDomain(DomainConfiguration $configuration)
+    public function challengeDomains(array $domains)
     {
-        $domain = $configuration->getDomain();
+        foreach (array_unique($domains) as $domain) {
+            $this->challengeDomain($domain);
+        }
+    }
 
+    /**
+     * Request and check a domain.
+     *
+     * @param string $domain
+     *
+     * @throws \Exception
+     */
+    public function challengeDomain($domain)
+    {
         $challenge = $this->client->requestChallenge($domain);
         $challengeEvent = new ChallengeEvent($challenge);
         $this->dispatcher->dispatch(AcmePhpBundleEvents::CHALLENGE_REQUESTED, $challengeEvent);
+
         try {
             $this->client->checkChallenge($challenge);
             $this->dispatcher->dispatch(AcmePhpBundleEvents::CHALLENGE_ACCEPTED, $challengeEvent);

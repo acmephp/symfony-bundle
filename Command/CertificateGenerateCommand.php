@@ -57,6 +57,14 @@ class CertificateGenerateCommand extends ContainerAwareCommand
                     'Fail to generate certificate for domain "{domain}"',
                     ['domain' => $domainConfiguration->getDomain(), 'exception' => $e]
                 );
+                $output->writeln(
+                    sprintf(
+                        '<error>Fail to generate certificate for domain <info>%s</info>:
+<comment>%s</comment>.',
+                        $domainConfiguration->getDomain(),
+                        $e->getMessage()
+                    )
+                );
                 $hasError = true;
             }
         }
