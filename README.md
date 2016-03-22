@@ -72,6 +72,42 @@ acme_php:
     resource: "@AcmePhpBundle/Resources/config/routing.xml"
 ```
 
+
+Usage
+-----
+
+Once the bundle is installed and configured, you can request your certificates
+by runnig the command `acmephp:generate`
+
+```bash
+$ ./bin/console acmephp:generate
+```
+
+The first time you run this command, AmePhpBundle will request a new
+certificate to the configured Certificate Autority (default
+[Letsencrypt](https://letsencrypt.org)) and store the generated certificate in
+the configured folder (default `~/.acmephp`).
+
+### Automatic renewal
+
+Each time you run the command `acmephp:generate` the certificate will be renew
+with a lifetime of 90 days (defined by the Certificate Autority). You can add
+a crontab to perform this task.
+
+```bash
+$ crontab -e
+
+0 0     1 * *     /var/www/my_app/bin/console acmephp:generate
+```
+
+> After regenerating a certificate you have to reload the web server to take
+the changes into account.
+
+> If you use a dedicated cron file in `/etc/cron.d/` be carrefull of the
+certificate storage location (configured by default in the `$HOME` directory)
+which is related to the user who run the command.
+
+
 Configuration reference
 -----------------------
 
@@ -82,19 +118,18 @@ acme_php:
     # Certificates locations. Default: `~/.acmephp`
     # Beware to use a directory readable by the web server
     # It should be writable too, to store certificates, keys and challenges.
-#    certificate_dir: ~/.acmephp
+    certificate_dir: ~/.acmephp
     
     # Certificate Authority used to deliver certificates. Default: `letsencrypt`. Available values : `letsencrypt`
     # You can use your own Certificate Authority by :
     #  - implementing the CertificateAuthorityConfigurationInterface interface
     #  - registering the service with the tag "acme_php.certificate_authority" and with an alias to use here
-#    certificate_authority: letsencrypt
+    certificate_authority: letsencrypt
 
     # Email addresse associated to the account used to generate certificate
     contact_email: contact@mycompany.com
     
     # Default Distinguished Name (or a DN) informations used to request certificates.
-    # Thoses values are the default one, but can be overrided for each registered domain
     default_distinguished_name: # https://scotthelme.co.uk/setting-up-le/
         # Country Name (2 letter code)
         country: FR
@@ -112,18 +147,18 @@ acme_php:
         organization_unit_name: IT
         
         # Email Address. When missing, the adresse defined in the parameter contact_email will be used
-#        email_address: john.doe@mycompany.com
+        email_address: john.doe@mycompany.com
     
     # List of domains to request
     domains:
     
         myapp.com: ~
-    
+
         www.myapp.com: ~
-    
+
         invoice.myapp.com:
-            organization_unit_name: Derusse billing
-            email_address: sales@mycompany.com
+            # You can override default distinguished name define above for each domain
+            organization_unit_name: sales
 
 ```
 
@@ -255,6 +290,95 @@ services:
 - CHALLENGE_REJECTED: When the challenge have been rejected
 
 
+WebServer Configuration sample
+------------------------------
+
+Here are some basic configurations for the common web servers.
+
+Mozilla provide a tool to generate more advance configuration:
+https://mozilla.github.io/server-side-tls/ssl-config-generator/
+
+You can also check your online certificate with this tool:
+https://www.ssllabs.com/ssltest/
+
+
+### Apache 2.2
+
+```
+# /etc/apache2/sites-available/<domain>.
+
+<VirtualHost *:443>
+    SSLEngine on
+    SSLCertificateFile      /var/www/.acmephp/domains/<domain>/cert.pem
+    SSLCertificateKeyFile   /var/www/.acmephp/domains/<domain>/private.pem
+    SSLCACertificateFile    /var/www/.acmephp/domains/<domain>/chain.pem
+
+    ...
+</VirtualHost>
+```
+
+
+```bash
+$ sudo service apache2 reload
+```
+
+### Apache 2.4
+
+```
+# /etc/apache2/sites-available/<domain>.
+
+<VirtualHost *:443>
+    SSLEngine on
+    SSLCertificateFile      /var/www/.acmephp/domains/<domain>/fullchain.pem
+    SSLCertificateKeyFile   /var/www/.acmephp/domains/<domain>/private.pem
+
+    ...
+</VirtualHost>
+```
+
+
+```bash
+$ sudo service apache2 reload
+```
+
+### Nginx
+
+```
+# /etc/nginx/sites-available/<domain>.
+
+server {
+    listen 443 ssl default_server;
+    server_name my-domain;
+
+    ssl_certificate       /var/www/.acmephp/domains/<domain>/fullchain.pem
+    ssl_certificate_key   /var/www/.acmephp/domains/<domain>/private.pem
+
+    ...
+}
+```
+
+
+```bash
+$ sudo service nginx reload
+```
+
+### haproxy
+
+```
+# /etc/haproxy/haproxy.cfg
+
+frontend www
+    bind :80
+    bind :443 ssl crt /var/www/.acmephp/domains/<domain>/combined.pem
+
+    ...
+```
+
+```bash
+$ sudo service haproxy reload
+```
+
+
 Contributing
 ------------
 
@@ -271,7 +395,7 @@ composer install
 ```
 composer install
 
-docker run -d --net host jderusse/testing-ca
+docker run -d --net host acmephp/testing-ca
 docker run --rm --net host martin/wait -c localhost:4000 -t 120
 features/fixtures/TestApp/console acmephp:server:start
 
@@ -284,7 +408,7 @@ features/fixtures/TestApp/console acmephp:server:stop
 
 Because Letsencrypt has a rate limiting, We recommends to use
 [Boulder](https://github.com/letsencrypt/boulder) as Certificate Authority.
-Which is include and fully package in the docker image `jderusse/testing-ca`
+Which is include and fully package in the docker image `acmephp/testing-ca`
 
 You'll find a micro symfony application in the folder
 `features/fixtures/TestApp`.
@@ -297,7 +421,7 @@ the symfony's server (to handle challenge requests).
 composer install
 
 # Launch boulder
-docker run -d --net host jderusse/testing-ca
+docker run -d --net host acmephp/testing-ca
 docker run --rm --net host martin/wait -c localhost:4000 -t 120
 
 # Launche the application to listen to challenge checks
