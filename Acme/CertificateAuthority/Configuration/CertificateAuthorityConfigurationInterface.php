@@ -38,11 +38,4 @@ interface CertificateAuthorityConfigurationInterface
      * @return string[]
      */
     public function getCertificatesChain();
-
-    /**
-     * Returns a pattern to define the path to the http request challenged by the certificate autority.
-     *
-     * @return string
-     */
-    public function getChallengePath();
 }

@@ -14,34 +14,62 @@ This repository is the Symfony bundle based on the [PHP library](https://github.
 Installation
 ------------
 
-The recommended way to install this bundle is through
-[Composer](http://getcomposer.org/). Require the `acmephp/symfony-bundle`
-package into your `composer.json` file:
+### Step 1: Download AcmePhpBundle using composer
 
-```json
-{
-    "require": {
-        "acmephp/symfony-bundle": "@stable"
-    }
-}
+Require the `acmephp/symfony-bundle` with composer [Composer](http://getcomposer.org/).
+
+```bash
+$ composer require acmephp/symfony-bundle
 ```
 
-**Protip:** you should browse the
-[`acmephp/symfony-bundle`](https://packagist.org/packages/acmephp/symfony-bundle)
-page to choose a stable version to use, avoid the `@stable` meta constraint.
+### Step 2: Enable the bundle
 
-Update `app/AppKernel.php`:
+Enable the bundle in the kernel:
 
 ```php
+<?php
+
+// app/AppKernel.php
 public function registerBundles()
 {
     $bundles = array(
         // ...
         new AcmePhp\Bundle\AcmePhpBundle(),
+        // ...
     );
-
-    return $bundles;
 }
+```
+
+### Step 3: Configure the AcmePhpBundle
+
+Below is a minimal example of the configuration necessary to use the
+`AcmePhpBundle` in your application:
+
+```yml
+# app/config/config.yml
+
+acme_php:
+    contact_email: contact@mycompany.com
+    default_distinguished_name:
+        country: FR
+        state: France
+        locality: Paris
+        organization_name: MyCompany
+        organization_unit_name: IT
+    domains:
+        myapp.com: ~
+```
+
+### Step 4:  Import AcmePhpBundle routing files
+
+Now that you have activated and configured the bundle, all that is left to do
+is import the AcmePhpBundle routing files.
+
+```yml
+# app/config/routing.yml
+
+acme_php:
+    resource: "@AcmePhpBundle/Resources/config/routing.xml"
 ```
 
 Configuration reference

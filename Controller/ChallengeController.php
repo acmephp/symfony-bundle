@@ -30,7 +30,7 @@ class ChallengeController extends Controller
      *
      * @return Response
      */
-    public function indexAction($token)
+    public function checkAction($token)
     {
         $logger = $this->get('acme_php.logger');
         try {

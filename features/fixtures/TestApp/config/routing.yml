@@ -1,0 +1,2 @@
+acme_php:
+    resource: "@AcmePhpBundle/Resources/config/routing.xml"

@@ -47,12 +47,4 @@ class LetsEncryptConfigurationTest extends \PHPUnit_Framework_TestCase
         $this->assertInternalType('array', $certificates);
         $this->assertCount(2, $certificates);
     }
-
-    public function test getChallengePath returns a path to the letsencrypt challenge()
-    {
-        $path = $this->service->getChallengePath();
-
-        $this->assertContains('{token}', $path);
-        $this->assertContains('.well-known/acme-challenge', $path);
-    }
 }
