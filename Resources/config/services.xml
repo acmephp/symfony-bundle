@@ -141,10 +141,6 @@
         </service>
 
         <!-- Http challenge Handler -->
-        <service id="acme_php.challenge.loader" class="AcmePhp\Bundle\Routing\Loader" decorates="routing.loader">
-            <argument type="service" id="acme_php.challenge.loader.inner"/>
-            <argument type="service" id="acme_php.core.certificate_authority"/>
-        </service>
         <service id="acme_php.challenge.repository" class="AcmePhp\Bundle\Acme\Domain\ChallengeRepository">
             <argument type="service" id="filesystem"/>
             <argument>%acme_php.certificate_dir%/challenges</argument>

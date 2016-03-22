@@ -86,8 +86,6 @@ class FeatureContext implements Context, SnippetAcceptingContext
      */
     public function certificateShouldBeGenerated($count)
     {
-        var_dump($this->storageDir);
-        var_dump(glob($this->storageDir.'/**'));
         \PHPUnit_Framework_Assert::assertCount((int) $count, glob($this->storageDir.'/domains/*/cert.pem'));
     }
 

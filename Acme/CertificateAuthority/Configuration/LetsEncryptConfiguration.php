@@ -43,12 +43,4 @@ class LetsEncryptConfiguration implements CertificateAuthorityConfigurationInter
     {
         return array_map('file_get_contents', LetsEncryptClient::getLetsEncryptCertificateChain());
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getChallengePath()
-    {
-        return '/.well-known/acme-challenge/{token}';
-    }
 }
