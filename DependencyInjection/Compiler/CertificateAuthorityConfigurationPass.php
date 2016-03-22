@@ -31,7 +31,9 @@ class CertificateAuthorityConfigurationPass implements CompilerPassInterface
         foreach ($container->findTaggedServiceIds('acme_php.certificate_authority') as $id => $attributes) {
             foreach ($attributes as $attribute) {
                 if (!isset($attribute['alias'])) {
-                    throw new \InvalidArgumentException(sprintf('Missing alias for "acme_php.certificate_authority" service "%s"', $id));
+                    throw new \InvalidArgumentException(
+                        sprintf('Missing alias for "acme_php.certificate_authority" service "%s"', $id)
+                    );
                 }
 
                 if ($certificateAuthority === $attribute['alias']) {
@@ -42,6 +44,8 @@ class CertificateAuthorityConfigurationPass implements CompilerPassInterface
             }
         }
 
-        throw new \InvalidArgumentException(sprintf('Unable to find the "%s" Certificate Authority', $certificateAuthority));
+        throw new \InvalidArgumentException(
+            sprintf('Unable to find the "%s" Certificate Authority', $certificateAuthority)
+        );
     }
 }

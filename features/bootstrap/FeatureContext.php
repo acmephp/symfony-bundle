@@ -18,6 +18,7 @@ use Symfony\Component\Yaml\Yaml;
 use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Core\Ssl\CSR;
 use AcmePhp\Bundle\Acme\Certificate\Extractor\CertificateExtractor;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 /**
  * Defines application features from the specific context.
@@ -118,18 +119,21 @@ class FeatureContext implements Context, SnippetAcceptingContext
     {
         $certFile = $this->storageDir.'/domains/'.$domain.'/cert.pem';
         $extractor = new CertificateExtractor();
-        $formatedData = $extractor->extract(file_get_contents($certFile));
+        $certificateMetadata = $extractor->extract(file_get_contents($certFile));
+        $accessor = new PropertyAccessor();
 
         $yaml = new Yaml();
         $expected = $yaml->parse($content->getRaw());
 
         foreach ($expected as $key => $value) {
-            PHPUnit_Framework_Assert::assertArrayHasKey($key, $formatedData);
-            if (is_array($value) && is_array($formatedData[$key])) {
+            PHPUnit_Framework_Assert::assertTrue($accessor->isReadable($certificateMetadata, $key));
+            $formattedValue = $accessor->getValue($certificateMetadata, $key);
+            if (is_array($value) && is_array($formattedValue)) {
                 sort($value);
-                sort($formatedData[$key]);
+                sort($formattedValue);
             }
-            PHPUnit_Framework_Assert::assertSame($value, $formatedData[$key]);
+
+            PHPUnit_Framework_Assert::assertSame($value, $formattedValue);
         }
     }
 

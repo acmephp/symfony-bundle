@@ -101,16 +101,16 @@ class CertificateRepository
      *
      * @param DomainConfiguration $configuration
      *
-     * @return array
+     * @return CertificateMetadata
      */
     public function loadCertificate(DomainConfiguration $configuration)
     {
-        $data = [];
+        $metadata = new CertificateMetadata($configuration->getDomain());
         $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
         foreach ($this->extractors as $extractor) {
-            $data += $extractor->extract($storage->loadCertificateFile($extractor->getName()));
+            $metadata->merge($extractor->extract($storage->loadCertificateFile($extractor->getName())));
         }
 
-        return $data;
+        return $metadata;
     }
 }

@@ -11,6 +11,7 @@
 
 namespace AcmePhp\Bundle\Acme\Certificate\Extractor;
 
+use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 use AcmePhp\Bundle\Exception\ParsingCertificateException;
 use AcmePhp\Core\Ssl\Certificate;
 
@@ -41,20 +42,20 @@ class CertificateExtractor implements ExtractorInterface
             );
         }
 
-        return [
-            'subject' => $rawData['subject']['CN'],
-            'serialNumber' => $rawData['serialNumber'],
-            'issuer' => $rawData['issuer']['CN'],
-            'selfSigned' => false !== strpos(
-                    $rawData['extensions']['authorityKeyIdentifier'],
-                    $rawData['extensions']['subjectKeyIdentifier']
-                ),
-            'subjectAlternativeNames' => array_map(
+        return new CertificateMetadata(
+            $rawData['subject']['CN'],
+            $rawData['issuer']['CN'],
+            false !== strpos(
+                $rawData['extensions']['authorityKeyIdentifier'],
+                $rawData['extensions']['subjectKeyIdentifier']
+            ),
+            $rawData['serialNumber'],
+            array_map(
                 function ($item) {
                     return explode(':', trim($item), 2)[1];
                 },
                 explode(',', $rawData['extensions']['subjectAltName'])
-            ),
-        ];
+            )
+        );
     }
 }

@@ -83,9 +83,12 @@ class KeyPairProvider
      */
     public function createKeyPair()
     {
-        $this->logger->info('Generating new KeyPair in {storageLocation}', [
-            'storageLocation' => $this->storage->getRootPath(),
-        ]);
+        $this->logger->info(
+            'Generating new KeyPair in {storageLocation}',
+            [
+                'storageLocation' => $this->storage->getRootPath(),
+            ]
+        );
 
         $this->storeKeyPair($this->manager->generateKeyPair());
     }

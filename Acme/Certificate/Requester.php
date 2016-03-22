@@ -78,11 +78,14 @@ class Requester
      */
     public function requestCertificate(DomainConfiguration $configuration)
     {
-        $domains = array_merge([$configuration->getDomain()], (array) $configuration->getCSR()->getSubjectAlternativeNames());
+        $domains = array_merge(
+            [$configuration->getDomain()],
+            (array) $configuration->getCSR()->getSubjectAlternativeNames()
+        );
         $challengedDomains = [];
         if ($this->certificateRepository->hasCertificate($configuration)) {
-            $data = $this->certificateRepository->loadCertificate($configuration);
-            $challengedDomains = array_merge([$configuration->getDomain()], $data['subjectAlternativeNames']);
+            $metadata = $this->certificateRepository->loadCertificate($configuration);
+            $challengedDomains = array_merge([$configuration->getDomain()], $metadata->getSubjectAlternativeNames());
         }
 
         $unchallengedDomains = array_values(array_diff($domains, $challengedDomains));

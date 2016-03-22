@@ -52,10 +52,12 @@ class KeyPairStorage
      */
     public function exists()
     {
-        return $this->filesystem->exists([
-            $this->getPublicFilePath(),
-            $this->getPrivateFilePath(),
-        ]);
+        return $this->filesystem->exists(
+            [
+                $this->getPublicFilePath(),
+                $this->getPrivateFilePath(),
+            ]
+        );
     }
 
     /**

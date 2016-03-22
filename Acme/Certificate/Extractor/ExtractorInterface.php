@@ -11,7 +11,7 @@
 
 namespace AcmePhp\Bundle\Acme\Certificate\Extractor;
 
-use AcmePhp\Core\Ssl\Certificate;
+use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 
 /**
  * Extract data from formatted certificate.
@@ -30,7 +30,7 @@ interface ExtractorInterface
     /**
      * Extract data.
      *
-     * @param string $content
+     * @param CertificateMetadata $content
      */
     public function extract($content);
 }

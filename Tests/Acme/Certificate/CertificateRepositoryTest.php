@@ -11,6 +11,7 @@
 
 namespace AcmePhp\Bundle\Tests\Acme\Certificate;
 
+use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
 use AcmePhp\Bundle\Acme\Certificate\Extractor\ExtractorInterface;
 use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
@@ -134,7 +135,13 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
         $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
         $dummyCertificateFileContent = uniqid();
-        $dummyCertificateData = ['property' => uniqid()];
+        $dummyCertificateMetadata = new CertificateMetadata(
+            $dummyDomain,
+            uniqid(),
+            (bool) rand(0, 1),
+            uniqid(),
+            [uniqid()]
+        );
         $dummyCertificateFileName = uniqid();
 
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
@@ -143,11 +150,15 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
         $this->mockExtractor->getName()->willReturn($dummyCertificateFileName);
-        $this->mockExtractor->extract($dummyCertificateFileContent)->shouldBeCalled()->willReturn($dummyCertificateData);
-        $mockStorage->loadCertificateFile($dummyCertificateFileName)->shouldBeCalled()->willReturn($dummyCertificateFileContent);
+        $this->mockExtractor->extract($dummyCertificateFileContent)->shouldBeCalled()->willReturn(
+            $dummyCertificateMetadata
+        );
+        $mockStorage->loadCertificateFile($dummyCertificateFileName)->shouldBeCalled()->willReturn(
+            $dummyCertificateFileContent
+        );
 
         $result = $this->service->loadCertificate($configuration, $dummyCertificate, $dummyDomainKeyPair);
 
-        $this->assertSame($dummyCertificateData, $result);
+        $this->assertSame(var_export($dummyCertificateMetadata, true), var_export($result, true));
     }
 }
