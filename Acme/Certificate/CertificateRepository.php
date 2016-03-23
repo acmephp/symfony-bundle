@@ -11,7 +11,7 @@
 
 namespace AcmePhp\Bundle\Acme\Certificate;
 
-use AcmePhp\Bundle\Acme\Certificate\Extractor\ExtractorInterface;
+use AcmePhp\Bundle\Acme\Certificate\Parser\ParserInterface;
 use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorageFactory;
 use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
@@ -31,18 +31,19 @@ class CertificateRepository
     /** @var FormatterInterface[] */
     protected $formatters;
 
-    /** @var ExtractorInterface[] */
-    protected $extractors;
+    /** @var ParserInterface[] */
+    protected $parsers;
 
     /**
      * @param CertificateStorageFactory $storageFactory
      * @param FormatterInterface[]      $formatters
+     * @param ParserInterface[]         $parsers
      */
-    public function __construct(CertificateStorageFactory $storageFactory, array $formatters, array $extractors)
+    public function __construct(CertificateStorageFactory $storageFactory, array $formatters, array $parsers)
     {
         $this->storageFactory = $storageFactory;
         $this->formatters = $formatters;
-        $this->extractors = $extractors;
+        $this->parsers = $parsers;
     }
 
     /**
@@ -107,8 +108,9 @@ class CertificateRepository
     {
         $metadata = new CertificateMetadata($configuration->getDomain());
         $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
-        foreach ($this->extractors as $extractor) {
-            $metadata->merge($extractor->extract($storage->loadCertificateFile($extractor->getName())));
+        /** @var ParserInterface $parser */
+        foreach ($this->parsers as $parser) {
+            $metadata->merge($parser->parse($storage->loadCertificateFile($parser->getName())));
         }
 
         return $metadata;

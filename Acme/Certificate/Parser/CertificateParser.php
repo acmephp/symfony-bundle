@@ -9,18 +9,18 @@
  * file that was distributed with this source code.
  */
 
-namespace AcmePhp\Bundle\Acme\Certificate\Extractor;
+namespace AcmePhp\Bundle\Acme\Certificate\Parser;
 
 use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 use AcmePhp\Bundle\Exception\ParsingCertificateException;
 use AcmePhp\Core\Ssl\Certificate;
 
 /**
- * Extract data from certificate file.
+ * Parse certificate to extract metadata.
  *
  * @author Jérémy Derussé <jeremy@derusse.com>
  */
-class CertificateExtractor implements ExtractorInterface
+class CertificateParser implements ParserInterface
 {
     /**
      * {@inheritdoc}
@@ -33,7 +33,7 @@ class CertificateExtractor implements ExtractorInterface
     /**
      * {@inheritdoc}
      */
-    public function extract($content)
+    public function parse($content)
     {
         $rawData = openssl_x509_parse($content);
         if (!$rawData) {

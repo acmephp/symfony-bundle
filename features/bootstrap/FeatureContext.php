@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Yaml\Yaml;
 use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Core\Ssl\CSR;
-use AcmePhp\Bundle\Acme\Certificate\Extractor\CertificateExtractor;
+use AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 /**
@@ -118,8 +118,8 @@ class FeatureContext implements Context, SnippetAcceptingContext
     public function theCertificateForTheDomainShouldContains($domain, PyStringNode $content)
     {
         $certFile = $this->storageDir.'/domains/'.$domain.'/cert.pem';
-        $extractor = new CertificateExtractor();
-        $certificateMetadata = $extractor->extract(file_get_contents($certFile));
+        $parser = new CertificateParser();
+        $certificateMetadata = $parser->parse(file_get_contents($certFile));
         $accessor = new PropertyAccessor();
 
         $yaml = new Yaml();

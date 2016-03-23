@@ -9,16 +9,16 @@
  * file that was distributed with this source code.
  */
 
-namespace AcmePhp\Bundle\Acme\Certificate\Extractor;
+namespace AcmePhp\Bundle\Acme\Certificate\Parser;
 
 use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 
 /**
- * Extract data from formatted certificate.
+ * Parse formatted certificate.
  *
  * @author Jérémy Derussé <jeremy@derusse.com>
  */
-interface ExtractorInterface
+interface ParserInterface
 {
     /**
      * Returns name of the related formatter.
@@ -28,9 +28,11 @@ interface ExtractorInterface
     public function getName();
 
     /**
-     * Extract data.
+     * Parse raw certificate content to retrieve metadata.
      *
-     * @param CertificateMetadata $content
+     * @param string $content
+     *
+     * @return CertificateMetadata
      */
-    public function extract($content);
+    public function parse($content);
 }

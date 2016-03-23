@@ -13,7 +13,7 @@ namespace AcmePhp\Bundle\Tests\Acme\Certificate;
 
 use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
-use AcmePhp\Bundle\Acme\Certificate\Extractor\ExtractorInterface;
+use AcmePhp\Bundle\Acme\Certificate\Parser\ParserInterface;
 use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorage;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorageFactory;
@@ -33,8 +33,8 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
     /** @var FormatterInterface */
     private $mockFormatter;
 
-    /** @var ExtractorInterface */
-    private $mockExtractor;
+    /** @var ParserInterface */
+    private $mockParser;
 
     public function setUp()
     {
@@ -42,12 +42,12 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
 
         $this->mockStorageFactory = $this->prophesize(CertificateStorageFactory::class);
         $this->mockFormatter = $this->prophesize(FormatterInterface::class);
-        $this->mockExtractor = $this->prophesize(ExtractorInterface::class);
+        $this->mockParser = $this->prophesize(ParserInterface::class);
 
         $this->service = new CertificateRepository(
             $this->mockStorageFactory->reveal(),
             [$this->mockFormatter->reveal()],
-            [$this->mockExtractor->reveal()]
+            [$this->mockParser->reveal()]
         );
     }
 
@@ -128,7 +128,7 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($result);
     }
 
-    public function test loadCertificate use extractors to parse certificate file content()
+    public function test loadCertificate use parsers to parse certificate file content()
     {
         $dummyDomain = uniqid();
         $dummyCsr = $this->prophesize(CSR::class)->reveal();
@@ -149,8 +149,8 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
-        $this->mockExtractor->getName()->willReturn($dummyCertificateFileName);
-        $this->mockExtractor->extract($dummyCertificateFileContent)->shouldBeCalled()->willReturn(
+        $this->mockParser->getName()->willReturn($dummyCertificateFileName);
+        $this->mockParser->parse($dummyCertificateFileContent)->shouldBeCalled()->willReturn(
             $dummyCertificateMetadata
         );
         $mockStorage->loadCertificateFile($dummyCertificateFileName)->shouldBeCalled()->willReturn(

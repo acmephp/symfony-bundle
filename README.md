@@ -266,7 +266,7 @@ services:
 ```
 
 **Certificate Formatter**: When a new certificate is requested, it is dumped in several formats (cert.pem, 
-combined.pem, ...). You can add your own formatter by implementing the interface
+chain.pem, combined.pem, ...). You can add your own formatter by implementing the interface
 `AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface` and adding the service with tag 
 `acme_php.certificate_formatter` as follow:  
 
@@ -279,6 +279,23 @@ services:
         public: false
         tags:
             - name: acme_php.certificate_formatter
+```
+
+**Certificate Parser**: When a new certificate needs to be read, the opposite operation have to be performed
+(extract information from a dumped formatted certificate). This task is done by Certificate Parsers.
+You can add your own parser by implementing the interface
+`AcmePhp\Bundle\Acme\Certificate\Parser\ParserInterface` and adding the service with tag
+`acme_php.certificate_parser` as follow:
+
+```yml
+# app/config/services.yml
+
+services:
+    app.custom_certificate_authority:
+        class: AppBundle\Acme\CustomParser
+        public: false
+        tags:
+            - name: acme_php.certificate_parser
 ```
 
 **Events**: AcmePhpBundle triggers many events:

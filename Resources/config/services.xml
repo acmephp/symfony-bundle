@@ -21,7 +21,7 @@
                  public="false">
             <argument type="service" id="acme_php.certificate.storage_factory"/>
             <argument/>  <!-- Formatters -->
-            <argument/>  <!-- Extractors-->
+            <argument/>  <!-- Parsers-->
         </service>
 
         <service id="acme_php.certificate.storage_factory"
@@ -53,9 +53,9 @@
             <tag name="acme_php.certificate_formatter"/>
         </service>
 
-        <!-- Extractors  -->
-        <service class="AcmePhp\Bundle\Acme\Certificate\Extractor\CertificateExtractor" public="false">
-            <tag name="acme_php.certificate_extractor"/>
+        <!-- Parsers  -->
+        <service class="AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser" public="false">
+            <tag name="acme_php.certificate_parser"/>
         </service>
 
         <!-- KeyPair -->
