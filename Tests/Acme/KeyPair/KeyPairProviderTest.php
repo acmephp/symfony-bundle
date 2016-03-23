@@ -39,7 +39,7 @@ class KeyPairProviderTest extends \PHPUnit_Framework_TestCase
         $this->mockLogger = $this->prophesize(LoggerInterface::class);
         $this->mockManager = $this->prophesize(KeyPairManager::class);
         $this->mockStorage = $this->prophesize(KeyPairStorage::class);
-        $this->mockStorage->getRootPath()->willReturn('~/.acme/certificates');
+        $this->mockStorage->getRootPath()->willReturn('%kernel.root_dir%/certs/domains');
 
         $this->service = new KeyPairProvider($this->mockManager->reveal(), $this->mockStorage->reveal());
         $this->service->setLogger($this->mockLogger->reveal());

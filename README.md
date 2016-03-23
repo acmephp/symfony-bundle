@@ -86,7 +86,7 @@ $ ./bin/console acmephp:generate
 The first time you run this command, AmePhpBundle will request a new
 certificate to the configured Certificate Autority (default
 [Letsencrypt](https://letsencrypt.org)) and store the generated certificate in
-the configured folder (default `~/.acmephp`).
+the configured folder (default `%kernel.root_dir%/certs`).
 
 ### Automatic renewal
 
@@ -103,10 +103,6 @@ $ crontab -e
 > After regenerating a certificate you have to reload the web server to take
 the changes into account.
 
-> If you use a dedicated cron file in `/etc/cron.d/` be carrefull of the
-certificate storage location (configured by default in the `$HOME` directory)
-which is related to the user who run the command.
-
 
 Configuration reference
 -----------------------
@@ -115,10 +111,10 @@ Configuration reference
 # app/config/config.yml
 
 acme_php:
-    # Certificates locations. Default: `~/.acmephp`
+    # Certificates locations. Default: `%kernel.root_dir%/certs`
     # Beware to use a directory readable by the web server
     # It should be writable too, to store certificates, keys and challenges.
-    certificate_dir: ~/.acmephp
+    certificate_dir: %kernel.root_dir%/certs
     
     # Certificate Authority used to deliver certificates. Default: `letsencrypt`. Available values : `letsencrypt`
     # You can use your own Certificate Authority by :
@@ -174,7 +170,7 @@ $ bin/console acmephp:generate
 The certificates will be stored in the folder defined by the parameter `certificate_dir`. 
 
 ```
-$ tree ~/.acmephp
+$ tree ./certs
 ├── account                   # Your account's keys
 │   ├── private.pem
 │   └── public.pem

@@ -68,7 +68,7 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('certificate_dir')
                     ->info('Certification location directory.')
                     ->cannotBeEmpty()
-                    ->defaultValue('~/.acmephp')
+                    ->defaultValue('%kernel.root_dir%/certs')
                 ->end()
                 ->scalarNode('certificate_authority')
                     ->info('Name of the certificate authority.')

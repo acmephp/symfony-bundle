@@ -132,7 +132,6 @@ class FeatureContext implements Context, SnippetAcceptingContext
     protected function getDefaultConfig()
     {
         return [
-            'certificate_dir' => '%kernel.root_dir%/certs',
             'certificate_authority' => 'boulder',
             'contact_email' => 'test@acmephp.com',
             'default_distinguished_name' => [
