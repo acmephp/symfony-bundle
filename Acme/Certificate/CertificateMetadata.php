@@ -78,35 +78,11 @@ class CertificateMetadata
     }
 
     /**
-     * @param string $subject
-     *
-     * @return CertificateMetadata
-     */
-    public function setSubject($subject)
-    {
-        $this->subject = $subject;
-
-        return $this;
-    }
-
-    /**
      * @return string
      */
     public function getSerialNumber()
     {
         return $this->serialNumber;
-    }
-
-    /**
-     * @param string $serialNumber
-     *
-     * @return CertificateMetadata
-     */
-    public function setSerialNumber($serialNumber)
-    {
-        $this->serialNumber = $serialNumber;
-
-        return $this;
     }
 
     /**
@@ -118,18 +94,6 @@ class CertificateMetadata
     }
 
     /**
-     * @param string $issuer
-     *
-     * @return CertificateMetadata
-     */
-    public function setIssuer($issuer)
-    {
-        $this->issuer = $issuer;
-
-        return $this;
-    }
-
-    /**
      * @return bool
      */
     public function isSelfSigned()
@@ -138,34 +102,10 @@ class CertificateMetadata
     }
 
     /**
-     * @param bool $selfSigned
-     *
-     * @return CertificateMetadata
-     */
-    public function setSelfSigned($selfSigned)
-    {
-        $this->selfSigned = $selfSigned;
-
-        return $this;
-    }
-
-    /**
      * @return array
      */
     public function getSubjectAlternativeNames()
     {
         return $this->subjectAlternativeNames;
-    }
-
-    /**
-     * @param array $subjectAlternativeNames
-     *
-     * @return CertificateMetadata
-     */
-    public function setSubjectAlternativeNames($subjectAlternativeNames)
-    {
-        $this->subjectAlternativeNames = $subjectAlternativeNames;
-
-        return $this;
     }
 }
