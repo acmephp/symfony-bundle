@@ -52,23 +52,6 @@ class CertificateMetadata
         $this->subjectAlternativeNames = $subjectAlternativeNames;
     }
 
-    public function merge(CertificateMetadata $other)
-    {
-        if (null !== $otherSubject = $other->getSubject()) {
-            $this->subject = $otherSubject;
-        }
-        if (null !== $otherSerialNumber = $other->getSerialNumber()) {
-            $this->serialNumber = $otherSerialNumber;
-        }
-        if (null !== $otherIssuer = $other->getIssuer()) {
-            $this->issuer = $otherIssuer;
-        }
-        if (true !== $otherSelfSigned = $other->isSelfSigned()) {
-            $this->selfSigned = $otherSelfSigned;
-        }
-        $this->subjectAlternativeNames += $other->getSubjectAlternativeNames();
-    }
-
     /**
      * @return string
      */

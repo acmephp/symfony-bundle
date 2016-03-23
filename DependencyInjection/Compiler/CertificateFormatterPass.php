@@ -42,6 +42,6 @@ class CertificateFormatterPass implements CompilerPassInterface
             $formatters[] = new Reference($id);
         }
 
-        $container->findDefinition('acme_php.certificate.repository')->replaceArgument(1, $formatters);
+        $container->findDefinition('acme_php.certificate.repository')->replaceArgument(3, $formatters);
     }
 }

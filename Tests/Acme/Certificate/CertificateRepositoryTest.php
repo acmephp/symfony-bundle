@@ -13,7 +13,8 @@ namespace AcmePhp\Bundle\Tests\Acme\Certificate;
 
 use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
-use AcmePhp\Bundle\Acme\Certificate\Parser\ParserInterface;
+use AcmePhp\Bundle\Acme\Certificate\Formatter\CertificateFormatter;
+use AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser;
 use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorage;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorageFactory;
@@ -30,24 +31,29 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
     /** @var CertificateStorageFactory */
     private $mockStorageFactory;
 
-    /** @var FormatterInterface */
-    private $mockFormatter;
+    /** @var CertificateFormatter */
+    private $mockCertificateFormatter;
 
-    /** @var ParserInterface */
-    private $mockParser;
+    /** @var FormatterInterface */
+    private $mockExtraFormatter;
+
+    /** @var CertificateParser */
+    private $mockCertificateParser;
 
     public function setUp()
     {
         parent::setUp();
 
         $this->mockStorageFactory = $this->prophesize(CertificateStorageFactory::class);
-        $this->mockFormatter = $this->prophesize(FormatterInterface::class);
-        $this->mockParser = $this->prophesize(ParserInterface::class);
+        $this->mockExtraFormatter = $this->prophesize(FormatterInterface::class);
+        $this->mockCertificateFormatter = $this->prophesize(CertificateFormatter::class);
+        $this->mockCertificateParser = $this->prophesize(CertificateParser::class);
 
         $this->service = new CertificateRepository(
             $this->mockStorageFactory->reveal(),
-            [$this->mockFormatter->reveal()],
-            [$this->mockParser->reveal()]
+            $this->mockCertificateParser->reveal(),
+            $this->mockCertificateFormatter->reveal(),
+            [$this->mockExtraFormatter->reveal()]
         );
     }
 
@@ -75,7 +81,9 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
         $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
         $dummyCertificateFileName = uniqid();
+        $dummyExtraFileName = uniqid();
         $dummyCertificateFileContent = uniqid();
+        $dummyExtaFileContent = uniqid();
 
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
@@ -83,9 +91,12 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
         $mockStorage->backup()->shouldBeCalled();
 
-        $this->mockFormatter->getName()->willReturn($dummyCertificateFileName);
-        $this->mockFormatter->format($dummyCertificate, $dummyDomainKeyPair)->willReturn($dummyCertificateFileContent);
+        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
+        $this->mockCertificateFormatter->format($dummyCertificate, $dummyDomainKeyPair)->willReturn($dummyCertificateFileContent);
+        $this->mockExtraFormatter->getName()->willReturn($dummyExtraFileName);
+        $this->mockExtraFormatter->format($dummyCertificate, $dummyDomainKeyPair)->willReturn($dummyExtaFileContent);
         $mockStorage->saveCertificateFile($dummyCertificateFileName, $dummyCertificateFileContent)->shouldBeCalled();
+        $mockStorage->saveCertificateFile($dummyExtraFileName, $dummyExtaFileContent)->shouldBeCalled();
 
         $this->service->persistCertificate($configuration, $dummyCertificate, $dummyDomainKeyPair);
     }
@@ -95,15 +106,19 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $dummyDomain = uniqid();
         $dummyCsr = $this->prophesize(CSR::class)->reveal();
         $dummyCertificateFileName = uniqid();
+        $dummyExtraFileName = uniqid();
 
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
-        $this->mockFormatter->getName()->willReturn($dummyCertificateFileName);
-        $this->mockFormatter->format()->shouldNotBeCalled();
+        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
+        $this->mockCertificateFormatter->format()->shouldNotBeCalled();
+        $this->mockExtraFormatter->getName()->willReturn($dummyExtraFileName);
+        $this->mockExtraFormatter->format()->shouldNotBeCalled();
         $mockStorage->removeCertificateFile($dummyCertificateFileName)->shouldBeCalled();
+        $mockStorage->removeCertificateFile($dummyExtraFileName)->shouldBeCalled();
 
         $this->service->clearCertificate($configuration);
     }
@@ -113,15 +128,19 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $dummyDomain = uniqid();
         $dummyCsr = $this->prophesize(CSR::class)->reveal();
         $dummyCertificateFileName = uniqid();
+        $dummyExtraFileName = uniqid();
 
         $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
-        $this->mockFormatter->getName()->willReturn($dummyCertificateFileName);
-        $this->mockFormatter->format()->shouldNotBeCalled();
+        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
+        $this->mockCertificateFormatter->format()->shouldNotBeCalled();
+        $this->mockExtraFormatter->getName()->willReturn($dummyExtraFileName);
+        $this->mockExtraFormatter->format()->shouldNotBeCalled();
         $mockStorage->hasCertificateFile($dummyCertificateFileName)->shouldBeCalled()->willReturn(true);
+        $mockStorage->hasCertificateFile($dummyExtraFileName)->shouldBeCalled()->willReturn(true);
 
         $result = $this->service->hasCertificate($configuration);
 
@@ -149,8 +168,8 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
-        $this->mockParser->getName()->willReturn($dummyCertificateFileName);
-        $this->mockParser->parse($dummyCertificateFileContent)->shouldBeCalled()->willReturn(
+        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
+        $this->mockCertificateParser->parse($dummyCertificateFileContent)->shouldBeCalled()->willReturn(
             $dummyCertificateMetadata
         );
         $mockStorage->loadCertificateFile($dummyCertificateFileName)->shouldBeCalled()->willReturn(

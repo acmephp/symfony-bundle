@@ -20,16 +20,8 @@ use AcmePhp\Core\Ssl\Certificate;
  *
  * @author Jérémy Derussé <jeremy@derusse.com>
  */
-class CertificateParser implements ParserInterface
+class CertificateParser
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getName()
-    {
-        return 'cert.pem';
-    }
-
     /**
      * {@inheritdoc}
      */
