@@ -16,7 +16,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
-use Webmozart\PathUtil\Path;
 
 /**
  * This is the class that loads and manages the bundle configuration.
@@ -39,7 +38,7 @@ class AcmePhpExtension extends Extension implements PrependExtensionInterface
         $loader->load('services.xml');
 
         $container->setParameter('acme_php.domains_configurations', (array) $config['domains']);
-        $container->setParameter('acme_php.certificate_dir', Path::canonicalize($config['certificate_dir']));
+        $container->setParameter('acme_php.certificate_dir', $config['certificate_dir']);
         $container->setParameter('acme_php.certificate_authority', $config['certificate_authority']);
         $container->setParameter('acme_php.contact_email', $config['contact_email']);
     }

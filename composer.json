@@ -39,7 +39,6 @@
         "symfony/filesystem": "^2.3|^3.0",
         "symfony/dependency-injection": "^2.7|^3.0",
         "symfony/finder": "^2.3|^3.0",
-        "webmozart/path-util": "^1.0|^2.0",
         "acmephp/core": "1.0.x-dev"
     },
     "require-dev": {
