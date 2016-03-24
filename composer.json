@@ -47,7 +47,8 @@
         "symfony/process": "^2.5|^3.0",
         "sllh/php-cs-fixer-styleci-bridge": "^1.5",
         "behat/behat": "~3.1@dev",
-        "behat/symfony2-extension": "~2.0"
+        "behat/symfony2-extension": "~2.0",
+        "symfony/property-access": "^3.0"
     },
     "config": {
         "bin-dir": "bin"

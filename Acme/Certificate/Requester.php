@@ -78,8 +78,19 @@ class Requester
      */
     public function requestCertificate(DomainConfiguration $configuration)
     {
-        if (!$this->certificateRepository->hasCertificate($configuration)) {
-            $this->challenger->challengeDomain($configuration);
+        $domains = array_merge(
+            [$configuration->getDomain()],
+            (array) $configuration->getCSR()->getSubjectAlternativeNames()
+        );
+        $challengedDomains = [];
+        if ($this->certificateRepository->hasCertificate($configuration)) {
+            $metadata = $this->certificateRepository->loadCertificate($configuration);
+            $challengedDomains = array_merge([$configuration->getDomain()], $metadata->getSubjectAlternativeNames());
+        }
+
+        $unchallengedDomains = array_values(array_diff($domains, $challengedDomains));
+        if (count($unchallengedDomains)) {
+            $this->challenger->challengeDomains($unchallengedDomains);
         }
 
         $domain = $configuration->getDomain();
@@ -91,11 +102,14 @@ class Requester
             $configuration->getCSR()
         );
 
-        $this->dispatcher->dispatch(AcmePhpBundleEvents::CERTIFICATE_REQUESTED, new CertificateEvent(
-            $configuration,
-            $certificate,
-            $domainKeyPair
-        ));
+        $this->dispatcher->dispatch(
+            AcmePhpBundleEvents::CERTIFICATE_REQUESTED,
+            new CertificateEvent(
+                $configuration,
+                $certificate,
+                $domainKeyPair
+            )
+        );
 
         $this->logger->notice('Certificate for domain {domain} requested', ['domain' => $configuration->getDomain()]);
 

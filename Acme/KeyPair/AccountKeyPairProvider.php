@@ -35,8 +35,12 @@ class AccountKeyPairProvider extends KeyPairProvider
      * @param ClientFactory  $clientFactory
      * @param string         $contactEmail
      */
-    public function __construct(KeyPairManager $manager, KeyPairStorage $storage, ClientFactory $clientFactory, $contactEmail)
-    {
+    public function __construct(
+        KeyPairManager $manager,
+        KeyPairStorage $storage,
+        ClientFactory $clientFactory,
+        $contactEmail
+    ) {
         parent::__construct($manager, $storage);
 
         $this->clientFactory = $clientFactory;

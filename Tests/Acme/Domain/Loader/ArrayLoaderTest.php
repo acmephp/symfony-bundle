@@ -26,6 +26,7 @@ class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
                 'organization_name' => uniqid(),
                 'organization_unit_name' => uniqid(),
                 'email_address' => uniqid(),
+                'subject_alternative_names' => ['sales.company.com'],
             ],
             'www.company.com' => [
                 'country' => uniqid(),
@@ -34,6 +35,7 @@ class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
                 'organization_name' => uniqid(),
                 'organization_unit_name' => uniqid(),
                 'email_address' => uniqid(),
+                'subject_alternative_names' => [],
             ],
         ];
 

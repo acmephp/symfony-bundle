@@ -34,12 +34,14 @@ class CertificateFormatterPass implements CompilerPassInterface
             $className = $container->getParameterBag()->resolveValue($formatterDefinition->getClass());
             $reflection = new \ReflectionClass($className);
             if (!$reflection->implementsInterface(FormatterInterface::class)) {
-                throw new \InvalidArgumentException(sprintf('The CertificateFormatter "%s" is not valid', $formatterDefinition->getClass()));
+                throw new \InvalidArgumentException(
+                    sprintf('The CertificateFormatter "%s" is not valid', $formatterDefinition->getClass())
+                );
             }
 
             $formatters[] = new Reference($id);
         }
 
-        $container->findDefinition('acme_php.certificate.repository')->replaceArgument(1, $formatters);
+        $container->findDefinition('acme_php.certificate.repository')->replaceArgument(3, $formatters);
     }
 }

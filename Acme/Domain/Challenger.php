@@ -15,6 +15,7 @@ use AcmePhp\Bundle\Event\ChallengeEvent;
 use AcmePhp\Bundle\Event\AcmePhpBundleEvents;
 use AcmePhp\Core\AcmeClient;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Webmozart\Assert\Assert;
 
 /**
  * Domain challenger.
@@ -40,19 +41,39 @@ class Challenger
     }
 
     /**
-     * Request and check a domain.
+     * Request and check a list of domain.
      *
-     * @param DomainConfiguration $configuration
+     * @param array $domains
      *
      * @throws \Exception
      */
-    public function challengeDomain(DomainConfiguration $configuration)
+    public function challengeDomains(array $domains)
     {
-        $domain = $configuration->getDomain();
+        Assert::allStringNotEmpty(
+            $domains,
+            'challengeDomains::$domains expected an array of non-empty string. Got: %s'
+        );
+
+        foreach (array_unique($domains) as $domain) {
+            $this->challengeDomain($domain);
+        }
+    }
+
+    /**
+     * Request and check a domain.
+     *
+     * @param string $domain
+     *
+     * @throws \Exception
+     */
+    public function challengeDomain($domain)
+    {
+        Assert::stringNotEmpty($domain, 'challengeDomain::$domain expected a non-empty string. Got: %s');
 
         $challenge = $this->client->requestChallenge($domain);
         $challengeEvent = new ChallengeEvent($challenge);
         $this->dispatcher->dispatch(AcmePhpBundleEvents::CHALLENGE_REQUESTED, $challengeEvent);
+
         try {
             $this->client->checkChallenge($challenge);
             $this->dispatcher->dispatch(AcmePhpBundleEvents::CHALLENGE_ACCEPTED, $challengeEvent);

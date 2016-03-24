@@ -266,7 +266,7 @@ services:
 ```
 
 **Certificate Formatter**: When a new certificate is requested, it is dumped in several formats (cert.pem, 
-combined.pem, ...). You can add your own formatter by implementing the interface
+chain.pem, combined.pem, ...). You can add your own formatter by implementing the interface
 `AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface` and adding the service with tag 
 `acme_php.certificate_formatter` as follow:  
 

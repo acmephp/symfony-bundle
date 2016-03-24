@@ -47,7 +47,8 @@ class ArrayLoader implements LoaderInterface
                     $domainConfiguration['locality'],
                     $domainConfiguration['organization_name'],
                     $domainConfiguration['organization_unit_name'],
-                    $domainConfiguration['email_address']
+                    $domainConfiguration['email_address'],
+                    (array) $domainConfiguration['subject_alternative_names']
                 )
             );
         }

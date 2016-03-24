@@ -15,6 +15,10 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Yaml\Yaml;
+use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
+use AcmePhp\Core\Ssl\CSR;
+use AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 /**
  * Defines application features from the specific context.
@@ -82,6 +86,25 @@ class FeatureContext implements Context, SnippetAcceptingContext
     }
 
     /**
+     * @Given a :domain certificate
+     */
+    public function aCertificate($domain)
+    {
+        $this->generateCertificate($domain);
+    }
+
+    /**
+     * @Given a :domain certificate which contains:
+     */
+    public function aCertificateWhichContains($domain, PyStringNode $rawConfig)
+    {
+        $yaml = new Yaml();
+        $csrConfig = $yaml->parse($rawConfig->getRaw());
+
+        $this->generateCertificate($domain, $csrConfig);
+    }
+
+    /**
      * @Then :count certificate should be generated
      */
     public function certificateShouldBeGenerated($count)
@@ -95,29 +118,22 @@ class FeatureContext implements Context, SnippetAcceptingContext
     public function theCertificateForTheDomainShouldContains($domain, PyStringNode $content)
     {
         $certFile = $this->storageDir.'/domains/'.$domain.'/cert.pem';
-        $rawData = openssl_x509_parse(file_get_contents($certFile));
-        $formatedData = [
-            'subject' => $rawData['subject']['CN'],
-            'serialNumber' => $rawData['serialNumber'],
-            'issuer' => $rawData['issuer']['CN'],
-            'selfSigned' => false !== strpos(
-                    $rawData['extensions']['authorityKeyIdentifier'],
-                    $rawData['extensions']['subjectKeyIdentifier']
-                ),
-            'sANs' => array_map(
-                function ($item) {
-                    return explode(':', trim($item), 2)[1];
-                },
-                explode(',', $rawData['extensions']['subjectAltName'])
-            ),
-        ];
+        $parser = new CertificateParser();
+        $certificateMetadata = $parser->parse(file_get_contents($certFile));
+        $accessor = new PropertyAccessor();
 
         $yaml = new Yaml();
         $expected = $yaml->parse($content->getRaw());
 
         foreach ($expected as $key => $value) {
-            PHPUnit_Framework_Assert::assertArrayHasKey($key, $formatedData);
-            PHPUnit_Framework_Assert::assertSame($value, $formatedData[$key]);
+            PHPUnit_Framework_Assert::assertTrue($accessor->isReadable($certificateMetadata, $key));
+            $formattedValue = $accessor->getValue($certificateMetadata, $key);
+            if (is_array($value) && is_array($formattedValue)) {
+                sort($value);
+                sort($formattedValue);
+            }
+
+            PHPUnit_Framework_Assert::assertSame($value, $formattedValue);
         }
     }
 
@@ -146,5 +162,26 @@ class FeatureContext implements Context, SnippetAcceptingContext
                 'acmephp.com' => null,
             ],
         ];
+    }
+
+    private function generateCertificate($domain, array $csrConfig = [])
+    {
+        $defaultConfig = $this->getDefaultConfig();
+        $defaultConfig['default_distinguished_name']['email_address'] = $defaultConfig['contact_email'];
+        $csrConfig = $defaultConfig['default_distinguished_name'] + $csrConfig;
+
+        $this->kernel->getContainer()->get('acme_php.certificate.requester')->requestCertificate(
+            new DomainConfiguration(
+                $domain,
+                new CSR(
+                    $csrConfig['country'],
+                    $csrConfig['state'],
+                    $csrConfig['locality'],
+                    $csrConfig['organization_name'],
+                    $csrConfig['organization_unit_name'],
+                    $csrConfig['email_address']
+                )
+            )
+        );
     }
 }

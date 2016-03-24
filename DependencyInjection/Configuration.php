@@ -106,7 +106,16 @@ class Configuration implements ConfigurationInterface
             ->useAttributeAsKey('name')
             ->fixXmlConfig('domain')
             ->normalizeKeys(false)
-            ->prototype('array');
+            ->prototype('array')
+            ->children()
+                ->arrayNode('subject_alternative_names')
+                    ->info('Alternative subject names.')
+                    ->requiresAtLeastOneElement()
+                    ->fixXmlConfig('subject_alternative_name')
+                    ->normalizeKeys(false)
+                    ->prototype('scalar')->end()
+                ->end()
+            ->end();
 
         $this->addDistinguishedNameSection($domainNode);
 

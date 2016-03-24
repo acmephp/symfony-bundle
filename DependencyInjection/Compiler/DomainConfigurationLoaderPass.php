@@ -33,7 +33,9 @@ class DomainConfigurationLoaderPass implements CompilerPassInterface
             $className = $container->getParameterBag()->resolveValue($loaderDefinition->getClass());
             $reflection = new \ReflectionClass($className);
             if (!$reflection->implementsInterface(LoaderInterface::class)) {
-                throw new \InvalidArgumentException(sprintf('The DomainConfigurationLoader "%s" is not valid', $loaderDefinition->getClass()));
+                throw new \InvalidArgumentException(
+                    sprintf('The DomainConfigurationLoader "%s" is not valid', $loaderDefinition->getClass())
+                );
             }
 
             $definition->addMethodCall('addLoader', [$loaderDefinition]);
