@@ -11,8 +11,9 @@
 
 namespace AcmePhp\Bundle\Acme\KeyPair\Storage;
 
-use AcmePhp\Core\Ssl\KeyPair;
-use AcmePhp\Core\Ssl\KeyPairManager;
+use AcmePhp\Ssl\KeyPair;
+use AcmePhp\Ssl\PrivateKey;
+use AcmePhp\Ssl\PublicKey;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -25,23 +26,18 @@ class KeyPairStorage
     /** @var Filesystem */
     private $filesystem;
 
-    /** @var KeyPairManager */
-    private $keyPairManager;
-
     /** @var string */
     private $storagePath;
 
     /**
      * KeyPairStorage constructor.
      *
-     * @param Filesystem     $filesystem
-     * @param KeyPairManager $keyPairManager
-     * @param string         $storagePath
+     * @param Filesystem $filesystem
+     * @param string     $storagePath
      */
-    public function __construct(Filesystem $filesystem, KeyPairManager $keyPairManager, $storagePath)
+    public function __construct(Filesystem $filesystem, $storagePath)
     {
         $this->filesystem = $filesystem;
-        $this->keyPairManager = $keyPairManager;
         $this->storagePath = $storagePath;
     }
 
@@ -63,12 +59,12 @@ class KeyPairStorage
     /**
      * Stores the given KeyPair.
      *
-     * @param \AcmePhp\Core\Ssl\KeyPair $keyPair
+     * @param KeyPair $keyPair
      */
     public function store(KeyPair $keyPair)
     {
-        $this->filesystem->dumpFile($this->getPublicFilePath(), $keyPair->getPublicKeyAsPEM());
-        $this->filesystem->dumpFile($this->getPrivateFilePath(), $keyPair->getPrivateKeyAsPEM());
+        $this->filesystem->dumpFile($this->getPublicFilePath(), $keyPair->getPublicKey()->getPEM());
+        $this->filesystem->dumpFile($this->getPrivateFilePath(), $keyPair->getPrivateKey()->getPEM());
     }
 
     /**
@@ -78,9 +74,9 @@ class KeyPairStorage
      */
     public function load()
     {
-        return $this->keyPairManager->loadKeyPair(
-            $this->getPublicFilePath(),
-            $this->getPrivateFilePath()
+        return new KeyPair(
+            new PublicKey(file_get_contents($this->getPublicFilePath())),
+            new PrivateKey(file_get_contents($this->getPrivateFilePath()))
         );
     }
 

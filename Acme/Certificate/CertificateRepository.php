@@ -11,13 +11,16 @@
 
 namespace AcmePhp\Bundle\Acme\Certificate;
 
-use AcmePhp\Bundle\Acme\Certificate\Formatter\CertificateFormatter;
-use AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser;
-use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
+use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorage;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorageFactory;
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
-use AcmePhp\Core\Ssl\Certificate;
-use AcmePhp\Core\Ssl\KeyPair;
+use AcmePhp\Ssl\Certificate;
+use AcmePhp\Ssl\CertificateResponse;
+use AcmePhp\Ssl\DistinguishedName;
+use AcmePhp\Ssl\Formatter\CertificateFormatter;
+use AcmePhp\Ssl\Formatter\FormatterInterface;
+use AcmePhp\Ssl\ParsedCertificate;
+use AcmePhp\Ssl\Parser\CertificateParser;
+use Webmozart\Assert\Assert;
 
 /**
  * Persist and hydrate certificate.
@@ -35,6 +38,9 @@ class CertificateRepository
     /** @var CertificateFormatter */
     protected $certificateFormatter;
 
+    /** @var string */
+    protected $certificateFilename;
+
     /** @var FormatterInterface[] */
     protected $extraFormatters;
 
@@ -42,71 +48,84 @@ class CertificateRepository
      * @param CertificateStorageFactory $storageFactory
      * @param CertificateParser         $certificateParser
      * @param CertificateFormatter      $certificateFormatter
-     * @param array                     $extraFormatters
+     * @param string                    $certificateFilename
      */
     public function __construct(
         CertificateStorageFactory $storageFactory,
         CertificateParser $certificateParser,
         CertificateFormatter $certificateFormatter,
-        array $extraFormatters
+        $certificateFilename
     ) {
         $this->storageFactory = $storageFactory;
         $this->certificateParser = $certificateParser;
         $this->certificateFormatter = $certificateFormatter;
-        $this->extraFormatters = $extraFormatters;
+        $this->certificateFilename = $certificateFilename;
 
-        if (!in_array($this->certificateFormatter, $this->extraFormatters)) {
-            $this->extraFormatters[] = $this->certificateFormatter;
+        $this->addFormatter($certificateFilename, $certificateFormatter);
+    }
+
+    public function addFormatter($filename, FormatterInterface $formatter)
+    {
+        Assert::stringNotEmpty($filename, __FUNCTION__.'::$filename expected an non-empty string. Got: %s');
+        if (isset($this->extraFormatters[$filename])) {
+            Assert::isInstanceOf(
+                $formatter,
+                get_class($this->extraFormatters[$filename]),
+                'An differente instance of formatter already given for this filename. Got: %s'
+            );
+
+            return;
         }
+
+        $this->extraFormatters[$filename] = $formatter;
     }
 
     /**
      * Store the given certificate in several formats.
      *
-     * @param DomainConfiguration $configuration
-     * @param Certificate         $certificate
-     * @param KeyPair             $domainKeyPair
+     * @param DistinguishedName   $distinguishedName
+     * @param CertificateResponse $certificateResponse
      */
-    public function persistCertificate(
-        DomainConfiguration $configuration,
-        Certificate $certificate,
-        KeyPair $domainKeyPair
-    ) {
-        $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
+    public function persistCertificate(DistinguishedName $distinguishedName, CertificateResponse $certificateResponse)
+    {
+        $storage = $this->getCertificateStorage($distinguishedName);
         $storage->backup();
+
         /** @var FormatterInterface $formatter */
-        foreach ($this->extraFormatters as $formatter) {
-            $storage->saveCertificateFile($formatter->getName(), $formatter->format($certificate, $domainKeyPair));
+        foreach ($this->extraFormatters as $filename => $formatter) {
+            $storage->saveCertificateFile($filename, $formatter->format($certificateResponse));
         }
     }
 
     /**
      * Clear the persisted certificates.
      *
-     * @param DomainConfiguration $configuration
+     * @param DistinguishedName $distinguishedName
      */
-    public function clearCertificate(DomainConfiguration $configuration)
+    public function clearCertificate(DistinguishedName $distinguishedName)
     {
-        $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
-        $storage->removeCertificateFile($this->certificateFormatter->getName());
+        $storage = $this->getCertificateStorage($distinguishedName);
+
         /** @var FormatterInterface $formatter */
-        foreach ($this->extraFormatters as $formatter) {
-            $storage->removeCertificateFile($formatter->getName());
+        foreach ($this->extraFormatters as $filename => $formatter) {
+            $storage->removeCertificateFile($filename);
         }
     }
 
     /**
-     * Return whether or not a certificate exists for the given configuration.
+     * Return whether or not a certificate fully exists for the given configuration.
      *
-     * @param DomainConfiguration $configuration
+     * @param DistinguishedName $distinguishedName
      *
      * @return bool
      */
-    public function hasCertificate(DomainConfiguration $configuration)
+    public function hasCertificate(DistinguishedName $distinguishedName)
     {
-        $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
-        foreach ($this->extraFormatters as $formatter) {
-            if (!$storage->hasCertificateFile($formatter->getName())) {
+        $storage = $this->getCertificateStorage($distinguishedName);
+
+        /** @var FormatterInterface $formatter */
+        foreach ($this->extraFormatters as $filename => $formatter) {
+            if (!$storage->hasCertificateFile($filename)) {
                 return false;
             }
         }
@@ -117,14 +136,28 @@ class CertificateRepository
     /**
      * Return certificate's data.
      *
-     * @param DomainConfiguration $configuration
+     * @param DistinguishedName $distinguishedName
      *
-     * @return CertificateMetadata
+     * @return ParsedCertificate
      */
-    public function loadCertificate(DomainConfiguration $configuration)
+    public function loadCertificate(DistinguishedName $distinguishedName)
     {
-        $storage = $this->storageFactory->createCertificateStorage($configuration->getDomain());
+        $storage = $this->getCertificateStorage($distinguishedName);
 
-        return $this->certificateParser->parse($storage->loadCertificateFile($this->certificateFormatter->getName()));
+        return $this->certificateParser->parse(
+            new Certificate($storage->loadCertificateFile($this->certificateFilename))
+        );
+    }
+
+    /**
+     * Retrieves a CertificateStorage for the commonName contains in the given distinguishedName.
+     *
+     * @param DistinguishedName $distinguishedName
+     *
+     * @return CertificateStorage
+     */
+    private function getCertificateStorage(DistinguishedName $distinguishedName)
+    {
+        return $this->storageFactory->createCertificateStorage($distinguishedName->getCommonName());
     }
 }

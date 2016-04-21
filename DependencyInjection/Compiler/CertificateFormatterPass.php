@@ -11,7 +11,7 @@
 
 namespace AcmePhp\Bundle\DependencyInjection\Compiler;
 
-use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
+use AcmePhp\Ssl\Formatter\FormatterInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -28,8 +28,9 @@ class CertificateFormatterPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
-        $formatters = [];
-        foreach ($container->findTaggedServiceIds('acme_php.certificate_formatter') as $id => $attributes) {
+        $repositoryDefinition = $container->findDefinition('acme_php.certificate.repository');
+
+        foreach ($container->findTaggedServiceIds('acme_php.certificate_formatter') as $id => $tags) {
             $formatterDefinition = $container->getDefinition($id);
             $className = $container->getParameterBag()->resolveValue($formatterDefinition->getClass());
             $reflection = new \ReflectionClass($className);
@@ -39,9 +40,17 @@ class CertificateFormatterPass implements CompilerPassInterface
                 );
             }
 
-            $formatters[] = new Reference($id);
+            foreach ($tags as $attributes) {
+                if (!isset($attributes['filename'])) {
+                    throw new \InvalidArgumentException(
+                        sprintf(
+                            'The the filename for the CertificateFormatter "%s" is not defined',
+                            $formatterDefinition->getClass()
+                        )
+                    );
+                }
+                $repositoryDefinition->addMethodCall('addFormatter', [$attributes['filename'], new Reference($id)]);
+            }
         }
-
-        $container->findDefinition('acme_php.certificate.repository')->replaceArgument(3, $formatters);
     }
 }

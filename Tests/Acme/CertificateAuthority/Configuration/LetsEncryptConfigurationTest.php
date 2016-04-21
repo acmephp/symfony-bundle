@@ -25,7 +25,7 @@ class LetsEncryptConfigurationTest extends \PHPUnit_Framework_TestCase
 
     public function test getBaseUri returns the official letsencrypt api uri()
     {
-        $url = parse_url($this->service->getBaseUri());
+        $url = parse_url($this->service->getDirectoryUri());
 
         $this->assertSame('https', $url['scheme']);
         $this->assertContains('api.letsencrypt.org', $url['host']);

@@ -36,7 +36,7 @@ class ClientFactoryTest extends \PHPUnit_Framework_TestCase
     public function test createAcmeClient use CA configuration()
     {
         $keyPair = $this->prophesize(KeyPair::class)->reveal();
-        $this->mockCA->getBaseUri()->shouldBeCalled();
+        $this->mockCA->getDirectoryUri()->shouldBeCalled();
         $this->mockCA->getAgreement()->shouldBeCalled();
 
         $client = $this->service->createAcmeClient($keyPair);

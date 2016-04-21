@@ -51,7 +51,7 @@ class Challenger
     {
         Assert::allStringNotEmpty(
             $domains,
-            'challengeDomains::$domains expected an array of non-empty string. Got: %s'
+             'challengeDomains::$domains expected an array of non-empty string. Got: %s'
         );
 
         foreach (array_unique($domains) as $domain) {

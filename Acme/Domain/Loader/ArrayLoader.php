@@ -11,8 +11,7 @@
 
 namespace AcmePhp\Bundle\Acme\Domain\Loader;
 
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
-use AcmePhp\Core\Ssl\CSR;
+use AcmePhp\Ssl\DistinguishedName;
 
 /**
  * Load domainConfigurations from the Symfony's config files.
@@ -38,18 +37,16 @@ class ArrayLoader implements LoaderInterface
     public function load()
     {
         $configurations = [];
-        foreach ((array) $this->configurations as $domain => $domainConfiguration) {
-            $configurations[] = new DomainConfiguration(
-                $domain,
-                new CSR(
-                    $domainConfiguration['country'],
-                    $domainConfiguration['state'],
-                    $domainConfiguration['locality'],
-                    $domainConfiguration['organization_name'],
-                    $domainConfiguration['organization_unit_name'],
-                    $domainConfiguration['email_address'],
-                    (array) $domainConfiguration['subject_alternative_names']
-                )
+        foreach ((array) $this->configurations as $commonName => $domainConfiguration) {
+            $configurations[] = new DistinguishedName(
+                $commonName,
+                $domainConfiguration['country'],
+                $domainConfiguration['state'],
+                $domainConfiguration['locality'],
+                $domainConfiguration['organization_name'],
+                $domainConfiguration['organization_unit_name'],
+                $domainConfiguration['email_address'],
+                (array) $domainConfiguration['subject_alternative_names']
             );
         }
 

@@ -11,7 +11,6 @@
 
 namespace AcmePhp\Bundle\Acme\KeyPair\Storage;
 
-use AcmePhp\Core\Ssl\KeyPairManager;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -24,23 +23,18 @@ class DomainKeyPairStorageFactory
     /** @var Filesystem */
     private $filesystem;
 
-    /** @var KeyPairManager */
-    private $keyPairManager;
-
     /** @var string */
     private $storagePath;
 
     /**
      * DomainKeyPairStorageFactory constructor.
      *
-     * @param Filesystem     $filesystem
-     * @param KeyPairManager $keyPairManager
-     * @param string         $storagePath
+     * @param Filesystem $filesystem
+     * @param string     $storagePath
      */
-    public function __construct(Filesystem $filesystem, KeyPairManager $keyPairManager, $storagePath)
+    public function __construct(Filesystem $filesystem, $storagePath)
     {
         $this->filesystem = $filesystem;
-        $this->keyPairManager = $keyPairManager;
         $this->storagePath = $storagePath;
     }
 
@@ -55,7 +49,6 @@ class DomainKeyPairStorageFactory
     {
         return new KeyPairStorage(
             $this->filesystem,
-            $this->keyPairManager,
             $this->storagePath.DIRECTORY_SEPARATOR.$domain
         );
     }

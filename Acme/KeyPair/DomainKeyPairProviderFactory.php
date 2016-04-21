@@ -12,7 +12,7 @@
 namespace AcmePhp\Bundle\Acme\KeyPair;
 
 use AcmePhp\Bundle\Acme\KeyPair\Storage\DomainKeyPairStorageFactory;
-use AcmePhp\Core\Ssl\KeyPairManager;
+use AcmePhp\Ssl\Generator\KeyPairGenerator;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 
@@ -25,19 +25,19 @@ class DomainKeyPairProviderFactory
 {
     use LoggerAwareTrait;
 
-    /** @var KeyPairManager */
-    private $keyPairManager;
+    /** @var KeyPairGenerator */
+    private $keyPairGenerator;
 
     /** @var DomainKeyPairStorageFactory */
     private $storageFactory;
 
     /***
-     * @param KeyPairManager              $keyPairManager
+     * @param KeyPairGenerator            $keyPairGenerator
      * @param DomainKeyPairStorageFactory $storageFactory
      */
-    public function __construct(KeyPairManager $keyPairManager, DomainKeyPairStorageFactory $storageFactory)
+    public function __construct(KeyPairGenerator $keyPairGenerator, DomainKeyPairStorageFactory $storageFactory)
     {
-        $this->keyPairManager = $keyPairManager;
+        $this->keyPairGenerator = $keyPairGenerator;
         $this->storageFactory = $storageFactory;
 
         $this->logger = new NullLogger();
@@ -53,7 +53,7 @@ class DomainKeyPairProviderFactory
     public function createKeyPairProvider($domain)
     {
         $provider = new KeyPairProvider(
-            $this->keyPairManager,
+            $this->keyPairGenerator,
             $this->storageFactory->createKeyPairStorage($domain)
         );
         $provider->setLogger($this->logger);

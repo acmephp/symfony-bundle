@@ -11,8 +11,6 @@
 
 namespace AcmePhp\Bundle\Acme\CertificateAuthority\Configuration;
 
-use AcmePhp\Core\LetsEncryptClient;
-
 /**
  * Class representing the configuration of the LetsEncrypt Certificate Authority.
  *
@@ -23,9 +21,9 @@ class LetsEncryptConfiguration implements CertificateAuthorityConfigurationInter
     /**
      * {@inheritdoc}
      */
-    public function getBaseUri()
+    public function getDirectoryUri()
     {
-        return 'https://acme-v01.api.letsencrypt.org';
+        return 'https://acme-v01.api.letsencrypt.org/directory';
     }
 
     /**
@@ -34,13 +32,5 @@ class LetsEncryptConfiguration implements CertificateAuthorityConfigurationInter
     public function getAgreement()
     {
         return 'https://letsencrypt.org/documents/LE-SA-v1.0.1-July-27-2015.pdf';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCertificatesChain()
-    {
-        return array_map('file_get_contents', LetsEncryptClient::getLetsEncryptCertificateChain());
     }
 }

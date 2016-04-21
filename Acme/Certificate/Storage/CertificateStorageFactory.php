@@ -46,16 +46,16 @@ class CertificateStorageFactory
     /**
      * Create a new instance of CertificateStorage for the given domain.
      *
-     * @param string $domain
+     * @param string $commonName
      *
      * @return CertificateStorage
      */
-    public function createCertificateStorage($domain)
+    public function createCertificateStorage($commonName)
     {
         return new CertificateStorage(
             $this->filesystem,
-            $this->storagePath.DIRECTORY_SEPARATOR.$domain,
-            $this->backupStoragePath.DIRECTORY_SEPARATOR.$domain
+            $this->storagePath.DIRECTORY_SEPARATOR.$commonName,
+            $this->backupStoragePath.DIRECTORY_SEPARATOR.$commonName
         );
     }
 }

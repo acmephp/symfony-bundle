@@ -12,16 +12,15 @@
 namespace TestAppBundle\CertificateAuthority\Configuration;
 
 use AcmePhp\Bundle\Acme\CertificateAuthority\Configuration\CertificateAuthorityConfigurationInterface;
-use AcmePhp\Core\LetsEncryptClient;
 
 class BoulderConfiguration implements CertificateAuthorityConfigurationInterface
 {
     /**
      * {@inheritdoc}
      */
-    public function getBaseUri()
+    public function getDirectoryUri()
     {
-        return 'http://127.0.0.1:4000';
+        return 'http://127.0.0.1:4000/directory';
     }
 
     /**
@@ -29,14 +28,6 @@ class BoulderConfiguration implements CertificateAuthorityConfigurationInterface
      */
     public function getAgreement()
     {
-        return 'http://127.0.0.1:4001/terms/v1';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCertificatesChain()
-    {
-        return array_map('file_get_contents', LetsEncryptClient::getLetsEncryptCertificateChain());
+        return 'http://boulder:4000/terms/v1';
     }
 }

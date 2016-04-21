@@ -13,7 +13,7 @@ namespace AcmePhp\Bundle\Tests\EventListener;
 
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
 use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
-use AcmePhp\Bundle\Event\CertificateEvent;
+use AcmePhp\Bundle\Event\CertificateResponseEvent;
 use AcmePhp\Bundle\EventListener\CertificatePersisterListener;
 use AcmePhp\Core\Ssl\Certificate;
 use AcmePhp\Core\Ssl\KeyPair;
@@ -49,7 +49,7 @@ class CertificatePersisterListenerTest extends \PHPUnit_Framework_TestCase
         $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
         $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
 
-        $event = new CertificateEvent(
+        $event = new CertificateResponseEvent(
             $dummyConfiguration,
             $dummyCertificate,
             $dummyDomainKeyPair

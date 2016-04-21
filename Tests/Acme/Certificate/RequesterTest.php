@@ -18,7 +18,7 @@ use AcmePhp\Bundle\Acme\Domain\Challenger;
 use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Bundle\Acme\KeyPair\DomainKeyPairProviderFactory;
 use AcmePhp\Bundle\Acme\KeyPair\KeyPairProvider;
-use AcmePhp\Bundle\Event\CertificateEvent;
+use AcmePhp\Bundle\Event\CertificateResponseEvent;
 use AcmePhp\Core\AcmeClient;
 use AcmePhp\Core\Ssl\Certificate;
 use AcmePhp\Core\Ssl\CSR;
@@ -206,8 +206,8 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
             'acme_php.certificate.requested',
             Argument::that(
                 function ($item) use ($dummyCertificate) {
-                    return $item instanceof CertificateEvent
-                    && $item->getCertificate() === $dummyCertificate;
+                    return $item instanceof CertificateResponseEvent
+                    && $item->getCertificateResponse() === $dummyCertificate;
                 }
             )
         )->shouldBeCalled();

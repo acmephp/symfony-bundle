@@ -12,12 +12,14 @@
 namespace AcmePhp\Bundle\Acme\Certificate;
 
 use AcmePhp\Bundle\Acme\Domain\Challenger;
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Bundle\Acme\KeyPair\DomainKeyPairProviderFactory;
-use AcmePhp\Bundle\Event\CertificateEvent;
+use AcmePhp\Bundle\Event\CertificateResponseEvent;
 use AcmePhp\Bundle\Event\AcmePhpBundleEvents;
 use AcmePhp\Core\AcmeClient;
 use AcmePhp\Core\Ssl\Certificate;
+use AcmePhp\Ssl\CertificateRequest;
+use AcmePhp\Ssl\CertificateResponse;
+use AcmePhp\Ssl\DistinguishedName;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -72,47 +74,53 @@ class Requester
     /**
      * Request a new certificate for the given configuration.
      *
-     * @param DomainConfiguration $configuration
+     * @param DistinguishedName $distinguishedName
      *
-     * @return Certificate
+     * @return CertificateResponse
      */
-    public function requestCertificate(DomainConfiguration $configuration)
+    public function requestCertificate(DistinguishedName $distinguishedName)
     {
-        $domains = array_merge(
-            [$configuration->getDomain()],
-            (array) $configuration->getCSR()->getSubjectAlternativeNames()
+        $subjectNames = array_merge(
+            [$distinguishedName->getCommonName()],
+            (array) $distinguishedName->getSubjectAlternativeNames()
         );
-        $challengedDomains = [];
-        if ($this->certificateRepository->hasCertificate($configuration)) {
-            $metadata = $this->certificateRepository->loadCertificate($configuration);
-            $challengedDomains = array_merge([$configuration->getDomain()], $metadata->getSubjectAlternativeNames());
+
+        $challengedNames = [];
+        if ($this->certificateRepository->hasCertificate($distinguishedName)) {
+            $parsedCertificate = $this->certificateRepository->loadCertificate($distinguishedName);
+            $challengedNames = array_merge(
+                [$distinguishedName->getCommonName()],
+                $parsedCertificate->getSubjectAlternativeNames()
+            );
         }
 
-        $unchallengedDomains = array_values(array_diff($domains, $challengedDomains));
+        $unchallengedDomains = array_values(array_diff($subjectNames, $challengedNames));
         if (count($unchallengedDomains)) {
             $this->challenger->challengeDomains($unchallengedDomains);
         }
 
-        $domain = $configuration->getDomain();
-        $domainKeyPair = $this->keyPairFactory->createKeyPairProvider($domain)->getOrCreateKeyPair();
+        $commonName = $distinguishedName->getCommonName();
+        $domainKeyPair = $this->keyPairFactory->createKeyPairProvider($commonName)->getOrCreateKeyPair();
 
-        $certificate = $this->client->requestCertificate(
-            $domain,
+        $certificateResponse = $this->client->requestCertificate(
+            $commonName,
             $domainKeyPair,
-            $configuration->getCSR()
-        );
-
-        $this->dispatcher->dispatch(
-            AcmePhpBundleEvents::CERTIFICATE_REQUESTED,
-            new CertificateEvent(
-                $configuration,
-                $certificate,
+            new CertificateRequest(
+                $distinguishedName,
                 $domainKeyPair
             )
         );
 
-        $this->logger->notice('Certificate for domain {domain} requested', ['domain' => $configuration->getDomain()]);
+        $this->dispatcher->dispatch(
+            AcmePhpBundleEvents::CERTIFICATE_REQUESTED,
+            new CertificateResponseEvent($certificateResponse)
+        );
 
-        return $certificate;
+        $this->logger->notice(
+            'Certificate for domain {domain} requested',
+            ['domain' => $distinguishedName->getCommonName()]
+        );
+
+        return $certificateResponse;
     }
 }
