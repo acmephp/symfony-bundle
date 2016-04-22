@@ -52,7 +52,7 @@ class CertificateGenerateCommand extends ContainerAwareCommand
                         $distinguishedName->getCommonName()
                     )
                 );
-            } catch (\Exceptions $e) {
+            } catch (\Exception $e) {
                 $this->getContainer()->get('acme_php.logger')->error(
                     'Fail to generate certificate for domain "{domain}"',
                     ['domain' => $distinguishedName->getCommonName(), 'exception' => $e]

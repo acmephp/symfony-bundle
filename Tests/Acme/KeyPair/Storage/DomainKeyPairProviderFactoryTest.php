@@ -15,7 +15,7 @@ use AcmePhp\Bundle\Acme\KeyPair\DomainKeyPairProviderFactory;
 use AcmePhp\Bundle\Acme\KeyPair\KeyPairProvider;
 use AcmePhp\Bundle\Acme\KeyPair\Storage\DomainKeyPairStorageFactory;
 use AcmePhp\Bundle\Acme\KeyPair\Storage\KeyPairStorage;
-use AcmePhp\Core\Ssl\KeyPairManager;
+use AcmePhp\Ssl\Generator\KeyPairGenerator;
 use Psr\Log\LoggerInterface;
 
 class DomainKeyPairProviderFactoryTest extends \PHPUnit_Framework_TestCase
@@ -24,7 +24,7 @@ class DomainKeyPairProviderFactoryTest extends \PHPUnit_Framework_TestCase
     private $service;
 
     /** @var KeyPairManager */
-    private $mockManager;
+    private $mockGenerator;
 
     /** @var DomainKeyPairStorageFactory */
     private $mockStorageFactory;
@@ -33,10 +33,10 @@ class DomainKeyPairProviderFactoryTest extends \PHPUnit_Framework_TestCase
     {
         parent::setUp();
 
-        $this->mockManager = $this->prophesize(KeyPairManager::class);
+        $this->mockGenerator = $this->prophesize(KeyPairGenerator::class);
         $this->mockStorageFactory = $this->prophesize(DomainKeyPairStorageFactory::class);
 
-        $this->service = new DomainKeyPairProviderFactory($this->mockManager->reveal(), $this->mockStorageFactory->reveal());
+        $this->service = new DomainKeyPairProviderFactory($this->mockGenerator->reveal(), $this->mockStorageFactory->reveal());
     }
 
     public function test createKeyPairProvider returns a new instance of KeyPairProvider()

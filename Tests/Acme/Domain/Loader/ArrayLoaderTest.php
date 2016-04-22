@@ -13,6 +13,7 @@ namespace AcmePhp\Bundle\Tests\Acme\Domain\Loader;
 
 use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Bundle\Acme\Domain\Loader\ArrayLoader;
+use AcmePhp\Ssl\DistinguishedName;
 
 class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
 {
@@ -45,9 +46,9 @@ class ArrayLoaderTest extends \PHPUnit_Framework_TestCase
 
         $this->assertInternalType('array', $result);
         $this->assertCount(2, $result);
-        $this->assertInstanceOf(DomainConfiguration::class, $result[0]);
-        $this->assertInstanceOf(DomainConfiguration::class, $result[1]);
-        $this->assertSame('company.com', $result[0]->getDomain());
-        $this->assertSame('www.company.com', $result[1]->getDomain());
+        $this->assertInstanceOf(DistinguishedName::class, $result[0]);
+        $this->assertInstanceOf(DistinguishedName::class, $result[1]);
+        $this->assertSame('company.com', $result[0]->getCommonName());
+        $this->assertSame('www.company.com', $result[1]->getCommonName());
     }
 }

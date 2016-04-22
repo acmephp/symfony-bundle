@@ -16,7 +16,6 @@ use AcmePhp\Bundle\Acme\KeyPair\DomainKeyPairProviderFactory;
 use AcmePhp\Bundle\Event\CertificateResponseEvent;
 use AcmePhp\Bundle\Event\AcmePhpBundleEvents;
 use AcmePhp\Core\AcmeClient;
-use AcmePhp\Core\Ssl\Certificate;
 use AcmePhp\Ssl\CertificateRequest;
 use AcmePhp\Ssl\CertificateResponse;
 use AcmePhp\Ssl\DistinguishedName;
@@ -104,7 +103,6 @@ class Requester
 
         $certificateResponse = $this->client->requestCertificate(
             $commonName,
-            $domainKeyPair,
             new CertificateRequest(
                 $distinguishedName,
                 $domainKeyPair

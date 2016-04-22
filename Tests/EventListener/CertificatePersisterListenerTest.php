@@ -12,11 +12,13 @@
 namespace AcmePhp\Bundle\Tests\EventListener;
 
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Bundle\Event\CertificateResponseEvent;
 use AcmePhp\Bundle\EventListener\CertificatePersisterListener;
-use AcmePhp\Core\Ssl\Certificate;
-use AcmePhp\Core\Ssl\KeyPair;
+use AcmePhp\Ssl\Certificate;
+use AcmePhp\Ssl\CertificateRequest;
+use AcmePhp\Ssl\CertificateResponse;
+use AcmePhp\Ssl\DistinguishedName;
+use AcmePhp\Ssl\KeyPair;
 
 class CertificatePersisterListenerTest extends \PHPUnit_Framework_TestCase
 {
@@ -45,17 +47,18 @@ class CertificatePersisterListenerTest extends \PHPUnit_Framework_TestCase
 
     public function test onCertificateRequested persists the certificate()
     {
-        $dummyConfiguration = $this->prophesize(DomainConfiguration::class)->reveal();
-        $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
-
-        $event = new CertificateResponseEvent(
-            $dummyConfiguration,
-            $dummyCertificate,
-            $dummyDomainKeyPair
+        $dummyDistinguishedName = $this->prophesize(DistinguishedName::class)->reveal();
+        $dummyCertificateResponse = new CertificateResponse(
+            new CertificateRequest(
+                $dummyDistinguishedName,
+                $this->prophesize(KeyPair::class)->reveal()
+            ),
+            $this->prophesize(Certificate::class)->reveal()
         );
 
-        $this->mockRepository->persistCertificate($dummyConfiguration, $dummyCertificate, $dummyDomainKeyPair)->shouldBeCalled();
+        $event = new CertificateResponseEvent($dummyCertificateResponse);
+
+        $this->mockRepository->persistCertificate($dummyDistinguishedName, $dummyCertificateResponse)->shouldBeCalled();
 
         $this->service->onCertificateRequested($event);
     }

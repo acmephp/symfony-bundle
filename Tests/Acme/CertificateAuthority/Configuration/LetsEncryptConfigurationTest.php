@@ -39,12 +39,4 @@ class LetsEncryptConfigurationTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('letsencrypt.org', $url['host']);
         $this->assertContains('.pdf', $url['path']);
     }
-
-    public function test getCertificatesChain returns a list of letsencrypt certificates()
-    {
-        $certificates = $this->service->getCertificatesChain();
-
-        $this->assertInternalType('array', $certificates);
-        $this->assertCount(2, $certificates);
-    }
 }

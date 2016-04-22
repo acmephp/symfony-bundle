@@ -64,6 +64,12 @@ class CertificateRepository
         $this->addFormatter($certificateFilename, $certificateFormatter);
     }
 
+    /**
+     * Register a new formatter.
+     *
+     * @param                    $filename
+     * @param FormatterInterface $formatter
+     */
     public function addFormatter($filename, FormatterInterface $formatter)
     {
         Assert::stringNotEmpty($filename, __FUNCTION__.'::$filename expected an non-empty string. Got: %s');
@@ -71,13 +77,23 @@ class CertificateRepository
             Assert::isInstanceOf(
                 $formatter,
                 get_class($this->extraFormatters[$filename]),
-                'An differente instance of formatter already given for this filename. Got: %s'
+                'A different instance of formatter already given for this filename. Got: %s'
             );
 
             return;
         }
 
         $this->extraFormatters[$filename] = $formatter;
+    }
+
+    /**
+     * Retrieves list of registered formatetrs.
+     *
+     * @return FormatterInterface[]
+     */
+    public function getFormatters()
+    {
+        return $this->extraFormatters;
     }
 
     /**

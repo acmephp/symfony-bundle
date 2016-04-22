@@ -53,6 +53,21 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
         $this->service->challengeDomain($dummyDomain);
     }
 
+    public function test challengeDomains requests and checks all domains()
+    {
+        $dummyDomain1 = uniqid();
+        $dummyDomain2 = uniqid();
+        $dummyChallenge1 = $this->prophesize(Challenge::class)->reveal();
+        $dummyChallenge2 = $this->prophesize(Challenge::class)->reveal();
+
+        $this->mockClient->requestChallenge($dummyDomain1)->shouldBeCalled()->willReturn($dummyChallenge1);
+        $this->mockClient->requestChallenge($dummyDomain2)->shouldBeCalled()->willReturn($dummyChallenge2);
+        $this->mockClient->checkChallenge($dummyChallenge1)->shouldBeCalled();
+        $this->mockClient->checkChallenge($dummyChallenge2)->shouldBeCalled();
+
+        $this->service->challengeDomains([$dummyDomain1, $dummyDomain2]);
+    }
+
     public function test challengeDomain triggers events()
     {
         $dummyDomain = uniqid();

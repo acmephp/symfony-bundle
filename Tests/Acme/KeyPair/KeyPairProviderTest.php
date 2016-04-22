@@ -13,8 +13,8 @@ namespace AcmePhp\Bundle\Tests\Acme\KeyPair;
 
 use AcmePhp\Bundle\Acme\KeyPair\KeyPairProvider;
 use AcmePhp\Bundle\Acme\KeyPair\Storage\KeyPairStorage;
-use AcmePhp\Core\Ssl\KeyPair;
-use AcmePhp\Core\Ssl\KeyPairManager;
+use AcmePhp\Ssl\Generator\KeyPairGenerator;
+use AcmePhp\Ssl\KeyPair;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
 
@@ -24,7 +24,7 @@ class KeyPairProviderTest extends \PHPUnit_Framework_TestCase
     private $service;
 
     /** @var KeyPairManager */
-    private $mockManager;
+    private $mockGenerator;
 
     /** @var KeyPairStorage */
     private $mockStorage;
@@ -37,11 +37,11 @@ class KeyPairProviderTest extends \PHPUnit_Framework_TestCase
         parent::setUp();
 
         $this->mockLogger = $this->prophesize(LoggerInterface::class);
-        $this->mockManager = $this->prophesize(KeyPairManager::class);
+        $this->mockGenerator = $this->prophesize(KeyPairGenerator::class);
         $this->mockStorage = $this->prophesize(KeyPairStorage::class);
         $this->mockStorage->getRootPath()->willReturn('~/.acme/certificates');
 
-        $this->service = new KeyPairProvider($this->mockManager->reveal(), $this->mockStorage->reveal());
+        $this->service = new KeyPairProvider($this->mockGenerator->reveal(), $this->mockStorage->reveal());
         $this->service->setLogger($this->mockLogger->reveal());
     }
 
@@ -71,7 +71,7 @@ class KeyPairProviderTest extends \PHPUnit_Framework_TestCase
     {
         $dummyKeyPair = $this->prophesize(KeyPair::class)->reveal();
 
-        $this->mockManager->generateKeyPair()->shouldBeCalled()->willReturn($dummyKeyPair);
+        $this->mockGenerator->generateKeyPair()->shouldBeCalled()->willReturn($dummyKeyPair);
         $this->mockStorage->store($dummyKeyPair)->shouldBeCalled();
 
         $this->service->createKeyPair();
@@ -81,9 +81,10 @@ class KeyPairProviderTest extends \PHPUnit_Framework_TestCase
     {
         $dummyKeyPair = $this->prophesize(KeyPair::class)->reveal();
 
-        $this->mockLogger->info(Argument::containingString('Generating new KeyPair'), Argument::any())->shouldBeCalled();
+        $this->mockLogger->info(Argument::containingString('Generating new KeyPair'), Argument::any())->shouldBeCalled(
+        );
 
-        $this->mockManager->generateKeyPair()->shouldBeCalled()->willReturn($dummyKeyPair);
+        $this->mockGenerator->generateKeyPair()->shouldBeCalled()->willReturn($dummyKeyPair);
         $this->mockStorage->store($dummyKeyPair)->shouldBeCalled();
 
         $this->service->createKeyPair();
@@ -95,7 +96,7 @@ class KeyPairProviderTest extends \PHPUnit_Framework_TestCase
 
         $this->mockStorage->exists()->willReturn(false);
 
-        $this->mockManager->generateKeyPair()->shouldBeCalled()->willReturn($dummyKeyPair);
+        $this->mockGenerator->generateKeyPair()->shouldBeCalled()->willReturn($dummyKeyPair);
         $this->mockStorage->store($dummyKeyPair)->shouldBeCalled();
 
         $this->mockStorage->load()->shouldBeCalled()->willReturn($dummyKeyPair);
@@ -109,7 +110,7 @@ class KeyPairProviderTest extends \PHPUnit_Framework_TestCase
 
         $this->mockStorage->exists()->willReturn(true);
 
-        $this->mockManager->generateKeyPair()->shouldNotBeCalled();
+        $this->mockGenerator->generateKeyPair()->shouldNotBeCalled();
 
         $this->mockStorage->load()->shouldBeCalled()->willReturn($dummyKeyPair);
 

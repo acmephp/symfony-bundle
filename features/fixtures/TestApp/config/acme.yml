@@ -10,4 +10,4 @@ acme_php:
         organization_unit_name: QA
     domains:
         acmephp.com:
-            subject_alternative_names: [www.acmephp.com]
+            subject_alternative_names: [www.acmephp.com, sales.acmephp.com]

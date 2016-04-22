@@ -11,17 +11,18 @@
 
 namespace AcmePhp\Bundle\Tests\Acme\Certificate;
 
-use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
-use AcmePhp\Bundle\Acme\Certificate\Formatter\CertificateFormatter;
-use AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser;
-use AcmePhp\Bundle\Acme\Certificate\Formatter\FormatterInterface;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorage;
 use AcmePhp\Bundle\Acme\Certificate\Storage\CertificateStorageFactory;
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
-use AcmePhp\Core\Ssl\Certificate;
-use AcmePhp\Core\Ssl\CSR;
-use AcmePhp\Core\Ssl\KeyPair;
+use AcmePhp\Ssl\Certificate;
+use AcmePhp\Ssl\CertificateResponse;
+use AcmePhp\Ssl\DistinguishedName;
+use AcmePhp\Ssl\Formatter\CertificateFormatter;
+use AcmePhp\Ssl\Formatter\FormatterInterface;
+use AcmePhp\Ssl\Formatter\KeyPairFormatter;
+use AcmePhp\Ssl\ParsedCertificate;
+use AcmePhp\Ssl\Parser\CertificateParser;
+use Prophecy\Argument;
 
 class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
 {
@@ -34,8 +35,14 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
     /** @var CertificateFormatter */
     private $mockCertificateFormatter;
 
+    /** @var string */
+    private $dummyCertificateFilename;
+
     /** @var FormatterInterface */
     private $mockExtraFormatter;
+
+    /** @var string */
+    private $dummyExtraFilename;
 
     /** @var CertificateParser */
     private $mockCertificateParser;
@@ -45,104 +52,111 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
         parent::setUp();
 
         $this->mockStorageFactory = $this->prophesize(CertificateStorageFactory::class);
+        $this->mockCertificateParser = $this->prophesize(CertificateParser::class);
         $this->mockExtraFormatter = $this->prophesize(FormatterInterface::class);
         $this->mockCertificateFormatter = $this->prophesize(CertificateFormatter::class);
-        $this->mockCertificateParser = $this->prophesize(CertificateParser::class);
+        $this->dummyCertificateFilename = uniqid();
+        $this->dummyExtraFilename = uniqid();
 
         $this->service = new CertificateRepository(
             $this->mockStorageFactory->reveal(),
             $this->mockCertificateParser->reveal(),
             $this->mockCertificateFormatter->reveal(),
-            [$this->mockExtraFormatter->reveal()]
+            $this->dummyCertificateFilename
         );
+        $this->service->addFormatter($this->dummyExtraFilename, $this->mockExtraFormatter->reveal());
     }
 
     public function test persistCertificate backups the previous certificates()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
-        $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
-
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
+        $dummyCertificateResponse = $this->prophesize(CertificateResponse::class)->reveal();
 
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
         $mockStorage->backup()->shouldBeCalled();
-        $mockStorage->saveCertificateFile(null, null)->shouldBeCalled();
+        $mockStorage->saveCertificateFile($this->dummyCertificateFilename, null)->shouldBeCalled();
+        $mockStorage->saveCertificateFile($this->dummyExtraFilename, null)->shouldBeCalled();
 
-        $this->service->persistCertificate($configuration, $dummyCertificate, $dummyDomainKeyPair);
+        $this->service->persistCertificate($dummyDistinguishedName, $dummyCertificateResponse);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @expectedExceptionMessage A different instance of formatter already given for this filename. Got: AcmePhp\Ssl\Formatter\KeyPairFormatter
+     */
+    public function test extraFormatters raise exception when two formatter use the same filename()
+    {
+        $formatterA = new CertificateFormatter();
+        $formatterB = new KeyPairFormatter();
+
+        $this->service->addFormatter('foo.pem', $formatterA);
+        $this->service->addFormatter('foo.pem', $formatterB);
+    }
+
+    public function test extraFormatters allow two identical formatter with the same filename()
+    {
+        $formatterA = new CertificateFormatter();
+        $formatterB = new CertificateFormatter();
+
+        $this->service->addFormatter('foo.pem', $formatterA);
+        $this->service->addFormatter('foo.pem', $formatterB);
     }
 
     public function test persistCertificate persists the certificate file()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
-        $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
-        $dummyCertificateFileName = uniqid();
-        $dummyExtraFileName = uniqid();
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
+        $dummyCertificateResponse = $this->prophesize(CertificateResponse::class)->reveal();
         $dummyCertificateFileContent = uniqid();
         $dummyExtaFileContent = uniqid();
-
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
 
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
         $mockStorage->backup()->shouldBeCalled();
 
-        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
-        $this->mockCertificateFormatter->format($dummyCertificate, $dummyDomainKeyPair)->willReturn($dummyCertificateFileContent);
-        $this->mockExtraFormatter->getName()->willReturn($dummyExtraFileName);
-        $this->mockExtraFormatter->format($dummyCertificate, $dummyDomainKeyPair)->willReturn($dummyExtaFileContent);
-        $mockStorage->saveCertificateFile($dummyCertificateFileName, $dummyCertificateFileContent)->shouldBeCalled();
-        $mockStorage->saveCertificateFile($dummyExtraFileName, $dummyExtaFileContent)->shouldBeCalled();
+        $this->mockCertificateFormatter->format($dummyCertificateResponse)->willReturn($dummyCertificateFileContent);
+        $this->mockExtraFormatter->format($dummyCertificateResponse)->willReturn($dummyExtaFileContent);
+        $mockStorage->saveCertificateFile(
+            $this->dummyCertificateFilename,
+            $dummyCertificateFileContent
+        )->shouldBeCalled();
+        $mockStorage->saveCertificateFile($this->dummyExtraFilename, $dummyExtaFileContent)->shouldBeCalled();
 
-        $this->service->persistCertificate($configuration, $dummyCertificate, $dummyDomainKeyPair);
+        $this->service->persistCertificate($dummyDistinguishedName, $dummyCertificateResponse);
     }
 
     public function test clearCertificate remove persisted files()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
-        $dummyCertificateFileName = uniqid();
-        $dummyExtraFileName = uniqid();
-
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
 
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
-        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
         $this->mockCertificateFormatter->format()->shouldNotBeCalled();
-        $this->mockExtraFormatter->getName()->willReturn($dummyExtraFileName);
         $this->mockExtraFormatter->format()->shouldNotBeCalled();
-        $mockStorage->removeCertificateFile($dummyCertificateFileName)->shouldBeCalled();
-        $mockStorage->removeCertificateFile($dummyExtraFileName)->shouldBeCalled();
+        $mockStorage->removeCertificateFile($this->dummyCertificateFilename)->shouldBeCalled();
+        $mockStorage->removeCertificateFile($this->dummyExtraFilename)->shouldBeCalled();
 
-        $this->service->clearCertificate($configuration);
+        $this->service->clearCertificate($dummyDistinguishedName);
     }
 
     public function test hasCertificate checks if files exists()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
-        $dummyCertificateFileName = uniqid();
-        $dummyExtraFileName = uniqid();
-
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
 
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
-        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
         $this->mockCertificateFormatter->format()->shouldNotBeCalled();
-        $this->mockExtraFormatter->getName()->willReturn($dummyExtraFileName);
         $this->mockExtraFormatter->format()->shouldNotBeCalled();
-        $mockStorage->hasCertificateFile($dummyCertificateFileName)->shouldBeCalled()->willReturn(true);
-        $mockStorage->hasCertificateFile($dummyExtraFileName)->shouldBeCalled()->willReturn(true);
+        $mockStorage->hasCertificateFile($this->dummyCertificateFilename)->shouldBeCalled()->willReturn(true);
+        $mockStorage->hasCertificateFile($this->dummyExtraFilename)->shouldBeCalled()->willReturn(true);
 
-        $result = $this->service->hasCertificate($configuration);
+        $result = $this->service->hasCertificate($dummyDistinguishedName);
 
         $this->assertTrue($result);
     }
@@ -150,34 +164,32 @@ class CertificateRepositoryTest extends \PHPUnit_Framework_TestCase
     public function test loadCertificate use parsers to parse certificate file content()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
-        $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
         $dummyCertificateFileContent = uniqid();
-        $dummyCertificateMetadata = new CertificateMetadata(
-            $dummyDomain,
-            uniqid(),
-            (bool) rand(0, 1),
-            uniqid(),
-            [uniqid()]
-        );
-        $dummyCertificateFileName = uniqid();
 
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
+        $dummyParsedCertificate = new ParsedCertificate(
+            new Certificate($dummyCertificateFileContent),
+            $dummyDomain
+        );
 
         $mockStorage = $this->prophesize(CertificateStorage::class);
         $this->mockStorageFactory->createCertificateStorage($dummyDomain)->willReturn($mockStorage->reveal());
 
-        $this->mockCertificateFormatter->getName()->willReturn($dummyCertificateFileName);
-        $this->mockCertificateParser->parse($dummyCertificateFileContent)->shouldBeCalled()->willReturn(
-            $dummyCertificateMetadata
-        );
-        $mockStorage->loadCertificateFile($dummyCertificateFileName)->shouldBeCalled()->willReturn(
+        $this->mockCertificateParser->parse(
+            Argument::that(
+                function ($item) use ($dummyCertificateFileContent) {
+                    $this->assertInstanceOf(Certificate::class, $item);
+                    $this->assertSame($dummyCertificateFileContent, $item->getPEM());
+
+                    return true;
+                }
+            )
+        )->shouldBeCalled()->willReturn($dummyParsedCertificate);
+        $mockStorage->loadCertificateFile($this->dummyCertificateFilename)->shouldBeCalled()->willReturn(
             $dummyCertificateFileContent
         );
 
-        $result = $this->service->loadCertificate($configuration, $dummyCertificate, $dummyDomainKeyPair);
-
-        $this->assertSame(var_export($dummyCertificateMetadata, true), var_export($result, true));
+        $result = $this->service->loadCertificate($dummyDistinguishedName);
+        $this->assertSame(var_export($dummyParsedCertificate, true), var_export($result, true));
     }
 }

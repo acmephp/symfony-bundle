@@ -9,15 +9,15 @@
  * file that was distributed with this source code.
  */
 
+use AcmePhp\Ssl\Certificate;
+use AcmePhp\Ssl\Parser\CertificateParser;
+use AcmePhp\Ssl\DistinguishedName;
 use Behat\Behat\Context\Context;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Yaml\Yaml;
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
-use AcmePhp\Core\Ssl\CSR;
-use AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 /**
@@ -119,15 +119,15 @@ class FeatureContext implements Context, SnippetAcceptingContext
     {
         $certFile = $this->storageDir.'/domains/'.$domain.'/cert.pem';
         $parser = new CertificateParser();
-        $certificateMetadata = $parser->parse(file_get_contents($certFile));
+        $parsedCertificate = $parser->parse(new Certificate(file_get_contents($certFile)));
         $accessor = new PropertyAccessor();
 
         $yaml = new Yaml();
         $expected = $yaml->parse($content->getRaw());
 
         foreach ($expected as $key => $value) {
-            PHPUnit_Framework_Assert::assertTrue($accessor->isReadable($certificateMetadata, $key));
-            $formattedValue = $accessor->getValue($certificateMetadata, $key);
+            PHPUnit_Framework_Assert::assertTrue($accessor->isReadable($parsedCertificate, $key));
+            $formattedValue = $accessor->getValue($parsedCertificate, $key);
             if (is_array($value) && is_array($formattedValue)) {
                 sort($value);
                 sort($formattedValue);
@@ -152,11 +152,6 @@ class FeatureContext implements Context, SnippetAcceptingContext
             'certificate_authority' => 'boulder',
             'contact_email' => 'test@acmephp.com',
             'default_distinguished_name' => [
-                'country' => 'FR',
-                'state' => 'France',
-                'locality' => 'Paris',
-                'organization_name' => 'acme',
-                'organization_unit_name' => 'QA',
             ],
             'domains' => [
                 'acmephp.com' => null,
@@ -164,23 +159,28 @@ class FeatureContext implements Context, SnippetAcceptingContext
         ];
     }
 
-    private function generateCertificate($domain, array $csrConfig = [])
+    private function generateCertificate($domain, array $domainConfig = [])
     {
         $defaultConfig = $this->getDefaultConfig();
         $defaultConfig['default_distinguished_name']['email_address'] = $defaultConfig['contact_email'];
-        $csrConfig = $defaultConfig['default_distinguished_name'] + $csrConfig;
+        $maskConfiguration = array_replace(
+            array_fill_keys(
+                ['country', 'state', 'locality', 'organization_name', 'organization_unit_name', 'email_address'],
+                null
+            ),
+            $defaultConfig['default_distinguished_name'],
+            $domainConfig
+        );
 
         $this->kernel->getContainer()->get('acme_php.certificate.requester')->requestCertificate(
-            new DomainConfiguration(
+            new DistinguishedName(
                 $domain,
-                new CSR(
-                    $csrConfig['country'],
-                    $csrConfig['state'],
-                    $csrConfig['locality'],
-                    $csrConfig['organization_name'],
-                    $csrConfig['organization_unit_name'],
-                    $csrConfig['email_address']
-                )
+                $maskConfiguration['country'],
+                $maskConfiguration['state'],
+                $maskConfiguration['locality'],
+                $maskConfiguration['organization_name'],
+                $maskConfiguration['organization_unit_name'],
+                $maskConfiguration['email_address']
             )
         );
     }
