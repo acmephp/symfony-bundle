@@ -124,19 +124,23 @@
                  public="false">
             <argument type="service" id="acme_php.core.certificate_authority"/>
             <argument type="service">
-                <service class="GuzzleHttp\Client"></service>
-            </argument>
-            <argument type="service">
-                <service class="AcmePhp\Core\Http\Base64SafeEncoder"></service>
-            </argument>
-            <argument type="service">
-                <service class="AcmePhp\Ssl\Parser\KeyParser"></service>
-            </argument>
-            <argument type="service">
-                <service class="AcmePhp\Ssl\Signer\DataSigner"></service>
-            </argument>
-            <argument type="service">
-                <service class="AcmePhp\Core\Http\ServerErrorHandler"></service>
+                <service class="AcmePhp\Core\Http\SecureHttpClientFactory">
+                    <argument type="service">
+                        <service class="GuzzleHttp\Client"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Core\Http\Base64SafeEncoder"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Ssl\Parser\KeyParser"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Ssl\Signer\DataSigner"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Core\Http\ServerErrorHandler"></service>
+                    </argument>
+                </service>
             </argument>
             <call method="setLogger">
                 <argument type="service" id="acme_php.logger"/>

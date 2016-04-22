@@ -14,7 +14,7 @@ namespace AcmePhp\Bundle\Tests\Acme\Domain;
 use AcmePhp\Bundle\Acme\Domain\Challenger;
 use AcmePhp\Bundle\Event\ChallengeEvent;
 use AcmePhp\Core\AcmeClient;
-use AcmePhp\Core\Protocol\Challenge;
+use AcmePhp\Core\Protocol\AuthorizationChallenge;
 use Prophecy\Argument;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -45,10 +45,10 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
     public function test challengeDomain requests and checks the domain()
     {
         $dummyDomain = uniqid();
-        $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
+        $dummyChallenge = $this->prophesize(AuthorizationChallenge::class)->reveal();
 
-        $this->mockClient->requestChallenge($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
-        $this->mockClient->checkChallenge($dummyChallenge)->shouldBeCalled();
+        $this->mockClient->requestAuthorization($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
+        $this->mockClient->challengeAuthorization($dummyChallenge)->shouldBeCalled();
 
         $this->service->challengeDomain($dummyDomain);
     }
@@ -57,13 +57,13 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
     {
         $dummyDomain1 = uniqid();
         $dummyDomain2 = uniqid();
-        $dummyChallenge1 = $this->prophesize(Challenge::class)->reveal();
-        $dummyChallenge2 = $this->prophesize(Challenge::class)->reveal();
+        $dummyChallenge1 = $this->prophesize(AuthorizationChallenge::class)->reveal();
+        $dummyChallenge2 = $this->prophesize(AuthorizationChallenge::class)->reveal();
 
-        $this->mockClient->requestChallenge($dummyDomain1)->shouldBeCalled()->willReturn($dummyChallenge1);
-        $this->mockClient->requestChallenge($dummyDomain2)->shouldBeCalled()->willReturn($dummyChallenge2);
-        $this->mockClient->checkChallenge($dummyChallenge1)->shouldBeCalled();
-        $this->mockClient->checkChallenge($dummyChallenge2)->shouldBeCalled();
+        $this->mockClient->requestAuthorization($dummyDomain1)->shouldBeCalled()->willReturn($dummyChallenge1);
+        $this->mockClient->requestAuthorization($dummyDomain2)->shouldBeCalled()->willReturn($dummyChallenge2);
+        $this->mockClient->challengeAuthorization($dummyChallenge1)->shouldBeCalled();
+        $this->mockClient->challengeAuthorization($dummyChallenge2)->shouldBeCalled();
 
         $this->service->challengeDomains([$dummyDomain1, $dummyDomain2]);
     }
@@ -71,10 +71,10 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
     public function test challengeDomain triggers events()
     {
         $dummyDomain = uniqid();
-        $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
+        $dummyChallenge = $this->prophesize(AuthorizationChallenge::class)->reveal();
 
-        $this->mockClient->requestChallenge($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
-        $this->mockClient->checkChallenge($dummyChallenge)->shouldBeCalled();
+        $this->mockClient->requestAuthorization($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
+        $this->mockClient->challengeAuthorization($dummyChallenge)->shouldBeCalled();
 
         $this->mockDispatcher->dispatch('acme_php.challenge.requested', Argument::that(function ($item) use ($dummyChallenge) {
             $this->assertInstanceOf(ChallengeEvent::class, $item);
@@ -104,10 +104,10 @@ class ChallengerTest extends \PHPUnit_Framework_TestCase
     public function test challengeDomain triggers rejected event()
     {
         $dummyDomain = uniqid();
-        $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
+        $dummyChallenge = $this->prophesize(AuthorizationChallenge::class)->reveal();
 
-        $this->mockClient->requestChallenge($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
-        $this->mockClient->checkChallenge($dummyChallenge)->shouldBeCalled()->willThrow(new \Exception());
+        $this->mockClient->requestAuthorization($dummyDomain)->shouldBeCalled()->willReturn($dummyChallenge);
+        $this->mockClient->challengeAuthorization($dummyChallenge)->shouldBeCalled()->willThrow(new \Exception());
 
         $this->mockDispatcher->dispatch('acme_php.challenge.requested', Argument::that(function ($item) use ($dummyChallenge) {
             $this->assertInstanceOf(ChallengeEvent::class, $item);

@@ -12,7 +12,7 @@
 namespace AcmePhp\Bundle\Acme\Domain;
 
 use AcmePhp\Bundle\Exception\ChallengeNotFoundException;
-use AcmePhp\Core\Protocol\Challenge;
+use AcmePhp\Core\Protocol\AuthorizationChallenge;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -39,9 +39,9 @@ class ChallengeRepository
     /**
      * Persists the given challenge in the repository.
      *
-     * @param Challenge $challenge
+     * @param AuthorizationChallenge $challenge
      */
-    public function persistChallenge(Challenge $challenge)
+    public function persistChallenge(AuthorizationChallenge $challenge)
     {
         $this->filesystem->dumpFile(
             $this->getFilePath($challenge->getToken()),
@@ -54,7 +54,7 @@ class ChallengeRepository
      *
      * @param string $token
      *
-     * @return Challenge
+     * @return AuthorizationChallenge
      */
     public function findOneByToken($token)
     {
@@ -69,9 +69,9 @@ class ChallengeRepository
     /**
      * Remove the given challenge.
      *
-     * @param Challenge $challenge
+     * @param AuthorizationChallenge $challenge
      */
-    public function removeChallenge(Challenge $challenge)
+    public function removeChallenge(AuthorizationChallenge $challenge)
     {
         $filePath = $this->getFilePath($challenge->getToken());
         if (!$this->filesystem->exists($filePath)) {

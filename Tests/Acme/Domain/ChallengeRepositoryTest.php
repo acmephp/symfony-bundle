@@ -12,7 +12,7 @@
 namespace AcmePhp\Bundle\Tests\Acme\Domain;
 
 use AcmePhp\Bundle\Acme\Domain\ChallengeRepository;
-use AcmePhp\Core\Protocol\Challenge;
+use AcmePhp\Core\Protocol\AuthorizationChallenge;
 use Symfony\Component\Filesystem\Filesystem;
 
 class ChallengeRepositoryTest extends \PHPUnit_Framework_TestCase
@@ -43,7 +43,7 @@ class ChallengeRepositoryTest extends \PHPUnit_Framework_TestCase
     {
         $dummyToken = uniqid();
 
-        $mockChallenge = $this->prophesize(Challenge::class);
+        $mockChallenge = $this->prophesize(AuthorizationChallenge::class);
         $mockChallenge->getToken()->willReturn($dummyToken);
 
         $this->mockFilesystem->dumpFile(
@@ -91,7 +91,7 @@ class ChallengeRepositoryTest extends \PHPUnit_Framework_TestCase
     public function test removeChallenge raise exception if file does not exists()
     {
         $dummyToken = uniqid();
-        $mockChallenge = $this->prophesize(Challenge::class);
+        $mockChallenge = $this->prophesize(AuthorizationChallenge::class);
         $mockChallenge->getToken()->willReturn($dummyToken);
 
         $this->mockFilesystem->exists($this->dummyStoragePath.'/'.$dummyToken)->willReturn(false);
@@ -101,7 +101,7 @@ class ChallengeRepositoryTest extends \PHPUnit_Framework_TestCase
     public function test removeChallenge removes the challenge file()
     {
         $dummyToken = uniqid();
-        $mockChallenge = $this->prophesize(Challenge::class);
+        $mockChallenge = $this->prophesize(AuthorizationChallenge::class);
         $mockChallenge->getToken()->willReturn($dummyToken);
 
         $this->mockFilesystem->exists($this->dummyStoragePath.'/'.$dummyToken)->willReturn(true);

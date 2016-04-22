@@ -12,7 +12,7 @@
 namespace AcmePhp\Bundle\Controller;
 
 use AcmePhp\Bundle\Exception\ChallengeNotFoundException;
-use AcmePhp\Core\Protocol\Challenge;
+use AcmePhp\Core\Protocol\AuthorizationChallenge;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -34,7 +34,7 @@ class ChallengeController extends Controller
     {
         $logger = $this->get('acme_php.logger');
         try {
-            /** @var Challenge $challenge */
+            /** @var AuthorizationChallenge $challenge */
             $challenge = $this->get('acme_php.challenge.repository')->findOneByToken($token);
         } catch (ChallengeNotFoundException $e) {
             $logger->warn(

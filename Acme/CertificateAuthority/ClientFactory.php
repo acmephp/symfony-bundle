@@ -15,6 +15,7 @@ use AcmePhp\Bundle\Acme\CertificateAuthority\Configuration\CertificateAuthorityC
 use AcmePhp\Core\AcmeClient;
 use AcmePhp\Core\Http\Base64SafeEncoder;
 use AcmePhp\Core\Http\SecureHttpClient;
+use AcmePhp\Core\Http\SecureHttpClientFactory;
 use AcmePhp\Core\Http\ServerErrorHandler;
 use AcmePhp\Ssl\KeyPair;
 use AcmePhp\Ssl\Parser\KeyParser;
@@ -34,49 +35,20 @@ class ClientFactory
 
     /** @var CertificateAuthorityConfigurationInterface */
     private $certificateAuthority;
-    /**
-     * @var ClientInterface
-     */
-    private $httpClient;
-    /**
-     * @var Base64SafeEncoder
-     */
-    private $base64Encoder;
-    /**
-     * @var KeyParser
-     */
-    private $keyParser;
-    /**
-     * @var DataSigner
-     */
-    private $dataSigner;
-    /**
-     * @var ServerErrorHandler
-     */
-    private $errorHandler;
+
+    /** @var SecureHttpClientFactory */
+    private $secureHttpClientFactory;
 
     /**
      * @param CertificateAuthorityConfigurationInterface $certificateAuthority
-     * @param ClientInterface                            $httpClient
-     * @param Base64SafeEncoder                          $base64Encoder
-     * @param KeyParser                                  $keyParser
-     * @param DataSigner                                 $dataSigner
-     * @param ServerErrorHandler                         $errorHandler
+     * @param SecureHttpClientFactory                    $secureHttpClientFactory
      */
     public function __construct(
         CertificateAuthorityConfigurationInterface $certificateAuthority,
-        ClientInterface $httpClient,
-        Base64SafeEncoder $base64Encoder,
-        KeyParser $keyParser,
-        DataSigner $dataSigner,
-        ServerErrorHandler $errorHandler
+        SecureHttpClientFactory $secureHttpClientFactory
     ) {
         $this->certificateAuthority = $certificateAuthority;
-        $this->httpClient = $httpClient;
-        $this->base64Encoder = $base64Encoder;
-        $this->keyParser = $keyParser;
-        $this->dataSigner = $dataSigner;
-        $this->errorHandler = $errorHandler;
+        $this->secureHttpClientFactory = $secureHttpClientFactory;
 
         $this->logger = new NullLogger();
     }
@@ -91,14 +63,7 @@ class ClientFactory
     public function createAcmeClient(KeyPair $accountKeyPair)
     {
         return new AcmeClient(
-            new SecureHttpClient(
-                $accountKeyPair,
-                $this->httpClient,
-                $this->base64Encoder,
-                $this->keyParser,
-                $this->dataSigner,
-                $this->errorHandler
-            ),
+            $this->secureHttpClientFactory->createSecureHttpClient($accountKeyPair),
             $this->certificateAuthority->getDirectoryUri()
         );
     }

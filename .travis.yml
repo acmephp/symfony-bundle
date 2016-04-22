@@ -37,7 +37,7 @@ matrix:
 before_install:
     - docker run -d --name boulder --net host acmephp/testing-ca
     - phpenv config-rm xdebug.ini
-    - composer global require hirak/prestissimo
+#    - composer global require hirak/prestissimo
     - if [ "$SYMFONY_VERSION" != "" ]; then composer require "symfony/symfony:${SYMFONY_VERSION}" --no-update; fi;
 
 install:
