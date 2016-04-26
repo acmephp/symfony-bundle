@@ -142,9 +142,6 @@
                     </argument>
                 </service>
             </argument>
-            <call method="setLogger">
-                <argument type="service" id="acme_php.logger"/>
-            </call>
         </service>
 
         <!-- Certificate Autorities -->

@@ -21,8 +21,6 @@ use AcmePhp\Ssl\KeyPair;
 use AcmePhp\Ssl\Parser\KeyParser;
 use AcmePhp\Ssl\Signer\DataSigner;
 use GuzzleHttp\ClientInterface;
-use Psr\Log\LoggerAwareTrait;
-use Psr\Log\NullLogger;
 
 /**
  * Create Acme Certificate Authority clients.
@@ -31,8 +29,6 @@ use Psr\Log\NullLogger;
  */
 class ClientFactory
 {
-    use LoggerAwareTrait;
-
     /** @var CertificateAuthorityConfigurationInterface */
     private $certificateAuthority;
 
@@ -49,8 +45,6 @@ class ClientFactory
     ) {
         $this->certificateAuthority = $certificateAuthority;
         $this->secureHttpClientFactory = $secureHttpClientFactory;
-
-        $this->logger = new NullLogger();
     }
 
     /**
