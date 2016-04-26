@@ -11,7 +11,7 @@
 
 namespace AcmePhp\Bundle\Command;
 
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
+use AcmePhp\Ssl\DistinguishedName;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -41,27 +41,27 @@ class CertificateGenerateCommand extends ContainerAwareCommand
         $loader = $this->getContainer()->get('acme_php.domains_configurations.loader');
         $requester = $this->getContainer()->get('acme_php.certificate.requester');
 
-        /* @var DomainConfiguration $domainConfiguration */
+        /* @var DistinguishedName $distinguishedName */
         $hasError = false;
-        foreach ($loader->load() as $domainConfiguration) {
+        foreach ($loader->load() as $distinguishedName) {
             try {
-                $requester->requestCertificate($domainConfiguration);
+                $requester->requestCertificate($distinguishedName);
                 $output->writeln(
                     sprintf(
                         '<info>Certificate for domain <comment>%s</comment> generated.',
-                        $domainConfiguration->getDomain()
+                        $distinguishedName->getCommonName()
                     )
                 );
             } catch (\Exception $e) {
                 $this->getContainer()->get('acme_php.logger')->error(
                     'Fail to generate certificate for domain "{domain}"',
-                    ['domain' => $domainConfiguration->getDomain(), 'exception' => $e]
+                    ['domain' => $distinguishedName->getCommonName(), 'exception' => $e]
                 );
                 $output->writeln(
                     sprintf(
                         '<error>Fail to generate certificate for domain <info>%s</info>:
 <comment>%s</comment>.',
-                        $domainConfiguration->getDomain(),
+                        $distinguishedName->getCommonName(),
                         $e->getMessage()
                     )
                 );

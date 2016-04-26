@@ -25,7 +25,6 @@ Feature: Generate certificates
           locality: La Digue
           organization_name: Vacation
           organization_unit_name: Lazy
-
     """
     When I run the command "acmephp:generate"
     Then "1" certificate should be generated
@@ -40,7 +39,6 @@ Feature: Generate certificates
     domains:
         acmephp.fr: ~
         acmephp.es: ~
-
     """
     When I run the command "acmephp:generate"
     Then "2" certificate should be generated
@@ -51,7 +49,6 @@ Feature: Generate certificates
     domains:
         "*.acmephp.fr": ~
         acmephp.es: ~
-
     """
     When I run the command "acmephp:generate"
     Then the command should be exit with code "1"

@@ -14,7 +14,7 @@ namespace AcmePhp\Bundle\Tests\EventListener;
 use AcmePhp\Bundle\Acme\Domain\ChallengeRepository;
 use AcmePhp\Bundle\Event\ChallengeEvent;
 use AcmePhp\Bundle\EventListener\ChallengePersisterListener;
-use AcmePhp\Core\Protocol\Challenge;
+use AcmePhp\Core\Protocol\AuthorizationChallenge;
 
 class ChallengePersisterListenerTest extends \PHPUnit_Framework_TestCase
 {
@@ -44,7 +44,7 @@ class ChallengePersisterListenerTest extends \PHPUnit_Framework_TestCase
 
     public function test onChallengeRequested persists the challenge()
     {
-        $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
+        $dummyChallenge = $this->prophesize(AuthorizationChallenge::class)->reveal();
 
         $event = new ChallengeEvent($dummyChallenge);
 
@@ -55,7 +55,7 @@ class ChallengePersisterListenerTest extends \PHPUnit_Framework_TestCase
 
     public function test onChallengeChecked remove the stored challenge()
     {
-        $dummyChallenge = $this->prophesize(Challenge::class)->reveal();
+        $dummyChallenge = $this->prophesize(AuthorizationChallenge::class)->reveal();
 
         $event = new ChallengeEvent($dummyChallenge);
 

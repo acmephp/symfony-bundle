@@ -13,9 +13,14 @@ namespace AcmePhp\Bundle\Acme\CertificateAuthority;
 
 use AcmePhp\Bundle\Acme\CertificateAuthority\Configuration\CertificateAuthorityConfigurationInterface;
 use AcmePhp\Core\AcmeClient;
-use AcmePhp\Core\Ssl\KeyPair;
-use Psr\Log\LoggerAwareTrait;
-use Psr\Log\NullLogger;
+use AcmePhp\Core\Http\Base64SafeEncoder;
+use AcmePhp\Core\Http\SecureHttpClient;
+use AcmePhp\Core\Http\SecureHttpClientFactory;
+use AcmePhp\Core\Http\ServerErrorHandler;
+use AcmePhp\Ssl\KeyPair;
+use AcmePhp\Ssl\Parser\KeyParser;
+use AcmePhp\Ssl\Signer\DataSigner;
+use GuzzleHttp\ClientInterface;
 
 /**
  * Create Acme Certificate Authority clients.
@@ -24,35 +29,36 @@ use Psr\Log\NullLogger;
  */
 class ClientFactory
 {
-    use LoggerAwareTrait;
-
     /** @var CertificateAuthorityConfigurationInterface */
     private $certificateAuthority;
 
+    /** @var SecureHttpClientFactory */
+    private $secureHttpClientFactory;
+
     /**
      * @param CertificateAuthorityConfigurationInterface $certificateAuthority
+     * @param SecureHttpClientFactory                    $secureHttpClientFactory
      */
-    public function __construct(CertificateAuthorityConfigurationInterface $certificateAuthority)
-    {
+    public function __construct(
+        CertificateAuthorityConfigurationInterface $certificateAuthority,
+        SecureHttpClientFactory $secureHttpClientFactory
+    ) {
         $this->certificateAuthority = $certificateAuthority;
-
-        $this->logger = new NullLogger();
+        $this->secureHttpClientFactory = $secureHttpClientFactory;
     }
 
     /**
      * Create a new instance of AcmeClient for the given account KeyPair.
      *
-     * @param KeyPair $keyPair
+     * @param KeyPair $accountKeyPair
      *
      * @return AcmeClient
      */
-    public function createAcmeClient(KeyPair $keyPair)
+    public function createAcmeClient(KeyPair $accountKeyPair)
     {
         return new AcmeClient(
-            $this->certificateAuthority->getBaseUri(),
-            $this->certificateAuthority->getAgreement(),
-            $keyPair,
-            $this->logger
+            $this->secureHttpClientFactory->createSecureHttpClient($accountKeyPair),
+            $this->certificateAuthority->getDirectoryUri()
         );
     }
 }

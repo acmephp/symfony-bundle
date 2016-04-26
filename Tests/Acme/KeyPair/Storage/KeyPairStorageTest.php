@@ -12,8 +12,9 @@
 namespace AcmePhp\Bundle\Tests\Acme\KeyPair\Storage;
 
 use AcmePhp\Bundle\Acme\KeyPair\Storage\KeyPairStorage;
-use AcmePhp\Core\Ssl\KeyPair;
-use AcmePhp\Core\Ssl\KeyPairManager;
+use AcmePhp\Ssl\KeyPair;
+use AcmePhp\Ssl\PrivateKey;
+use AcmePhp\Ssl\PublicKey;
 use Symfony\Component\Filesystem\Filesystem;
 
 class KeyPairStorageTest extends \PHPUnit_Framework_TestCase
@@ -24,9 +25,6 @@ class KeyPairStorageTest extends \PHPUnit_Framework_TestCase
     /** @var Filesystem */
     private $mockFilesystem;
 
-    /** @var KeyPairManager */
-    private $mockKeyPairManager;
-
     /** @var string */
     private $dummyStoragePath;
 
@@ -35,12 +33,10 @@ class KeyPairStorageTest extends \PHPUnit_Framework_TestCase
         parent::setUp();
 
         $this->mockFilesystem = $this->prophesize(Filesystem::class);
-        $this->mockKeyPairManager = $this->prophesize(KeyPairManager::class);
-        $this->dummyStoragePath = uniqid();
+        $this->dummyStoragePath = sys_get_temp_dir().'/'.uniqid();
 
         $this->service = new KeyPairStorage(
             $this->mockFilesystem->reveal(),
-            $this->mockKeyPairManager->reveal(),
             $this->dummyStoragePath
         );
     }
@@ -48,14 +44,37 @@ class KeyPairStorageTest extends \PHPUnit_Framework_TestCase
     public function test exists asserts every file exists()
     {
         $dummySuccess = rand(0, 1) === 1;
-        $this->mockFilesystem->exists([
-            $this->dummyStoragePath.'/public.pem',
-            $this->dummyStoragePath.'/private.pem',
-        ])->willReturn($dummySuccess);
+        $this->mockFilesystem->exists(
+            [
+                $this->dummyStoragePath.'/public.pem',
+                $this->dummyStoragePath.'/private.pem',
+            ]
+        )->willReturn($dummySuccess);
 
         $result = $this->service->exists();
 
         $this->assertSame($dummySuccess, $result);
+    }
+
+    public function test load dump each certificate()
+    {
+        $dummyPrivateKey = uniqid();
+        $dummyPublicKey = uniqid();
+
+        mkdir($this->dummyStoragePath);
+        file_put_contents($this->dummyStoragePath.'/public.pem', $dummyPublicKey);
+        file_put_contents($this->dummyStoragePath.'/private.pem', $dummyPrivateKey);
+        try {
+            $result = $this->service->load();
+        } finally {
+            unlink($this->dummyStoragePath.'/public.pem');
+            unlink($this->dummyStoragePath.'/private.pem');
+            rmdir($this->dummyStoragePath);
+        }
+
+        $this->assertInstanceOf(KeyPair::class, $result);
+        $this->assertEquals($dummyPublicKey, $result->getPublicKey()->getPEM());
+        $this->assertEquals($dummyPrivateKey, $result->getPrivateKey()->getPEM());
     }
 
     public function test store dump each certificate()
@@ -63,29 +82,15 @@ class KeyPairStorageTest extends \PHPUnit_Framework_TestCase
         $dummyPrivateKey = uniqid();
         $dummyPublicKey = uniqid();
 
-        $mockKeyPair = $this->prophesize(KeyPair::class);
-
-        $mockKeyPair->getPublicKeyAsPEM()->shouldBeCalled()->willReturn($dummyPublicKey);
-        $mockKeyPair->getPrivateKeyAsPEM()->shouldBeCalled()->willReturn($dummyPrivateKey);
+        $dummyKeyPair = new KeyPair(
+            new PublicKey($dummyPublicKey),
+            new PrivateKey($dummyPrivateKey)
+        );
 
         $this->mockFilesystem->dumpFile($this->dummyStoragePath.'/public.pem', $dummyPublicKey)->shouldBeCalled();
         $this->mockFilesystem->dumpFile($this->dummyStoragePath.'/private.pem', $dummyPrivateKey)->shouldBeCalled();
 
-        $this->service->store($mockKeyPair->reveal());
-    }
-
-    public function test load use the KeyPairManager to load the stored certificates()
-    {
-        $dummyKeyPair = uniqid();
-
-        $this->mockKeyPairManager->loadKeyPair(
-            $this->dummyStoragePath.'/public.pem',
-            $this->dummyStoragePath.'/private.pem'
-        )->shouldBeCalled()->willReturn($dummyKeyPair);
-
-        $result = $this->service->load();
-
-        $this->assertSame($dummyKeyPair, $result);
+        $this->service->store($dummyKeyPair);
     }
 
     public function test getRootPath returns the original storagePath()

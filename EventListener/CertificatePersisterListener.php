@@ -12,7 +12,7 @@
 namespace AcmePhp\Bundle\EventListener;
 
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
-use AcmePhp\Bundle\Event\CertificateEvent;
+use AcmePhp\Bundle\Event\CertificateResponseEvent;
 use AcmePhp\Bundle\Event\AcmePhpBundleEvents;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -44,14 +44,13 @@ class CertificatePersisterListener implements EventSubscriberInterface
     /**
      * Triggered when a certificate is requested.
      *
-     * @param CertificateEvent $event
+     * @param CertificateResponseEvent $event
      */
-    public function onCertificateRequested(CertificateEvent $event)
+    public function onCertificateRequested(CertificateResponseEvent $event)
     {
         $this->certificateRepository->persistCertificate(
-            $event->getDomainConfiguration(),
-            $event->getCertificate(),
-            $event->getDomainKeyPair()
+            $event->getCertificateResponse()->getCertificateRequest()->getDistinguishedName(),
+            $event->getCertificateResponse()
         );
     }
 }

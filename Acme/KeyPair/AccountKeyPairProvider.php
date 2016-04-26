@@ -12,9 +12,10 @@
 namespace AcmePhp\Bundle\Acme\KeyPair;
 
 use AcmePhp\Bundle\Acme\CertificateAuthority\ClientFactory;
+use AcmePhp\Bundle\Acme\CertificateAuthority\Configuration\CertificateAuthorityConfigurationInterface;
 use AcmePhp\Bundle\Acme\KeyPair\Storage\KeyPairStorage;
-use AcmePhp\Core\Ssl\KeyPair;
-use AcmePhp\Core\Ssl\KeyPairManager;
+use AcmePhp\Ssl\Generator\KeyPairGenerator;
+use AcmePhp\Ssl\KeyPair;
 
 /**
  * KeyPairs provider.
@@ -26,24 +27,30 @@ class AccountKeyPairProvider extends KeyPairProvider
     /** @var ClientFactory */
     private $clientFactory;
 
+    /** @var CertificateAuthorityConfigurationInterface */
+    private $certificateAuthorityConfiguration;
+
     /** @var string */
     private $contactEmail;
 
     /**
-     * @param KeyPairManager $manager
-     * @param KeyPairStorage $storage
-     * @param ClientFactory  $clientFactory
-     * @param string         $contactEmail
+     * @param KeyPairGenerator                           $generator
+     * @param KeyPairStorage                             $storage
+     * @param ClientFactory                              $clientFactory
+     * @param CertificateAuthorityConfigurationInterface $certificateAuthorityConfiguration
+     * @param string                                     $contactEmail
      */
     public function __construct(
-        KeyPairManager $manager,
+        KeyPairGenerator $generator,
         KeyPairStorage $storage,
         ClientFactory $clientFactory,
+        CertificateAuthorityConfigurationInterface $certificateAuthorityConfiguration,
         $contactEmail
     ) {
-        parent::__construct($manager, $storage);
+        parent::__construct($generator, $storage);
 
         $this->clientFactory = $clientFactory;
+        $this->certificateAuthorityConfiguration = $certificateAuthorityConfiguration;
         $this->contactEmail = $contactEmail;
     }
 
@@ -65,7 +72,7 @@ class AccountKeyPairProvider extends KeyPairProvider
     public function register(KeyPair $keyPair)
     {
         $client = $this->clientFactory->createAcmeClient($keyPair);
-        $client->registerAccount($this->contactEmail);
+        $client->registerAccount($this->certificateAuthorityConfiguration->getAgreement(), $this->contactEmail);
 
         $this->logger->notice('Account {contactEmail} registered', ['contactEmail' => $this->contactEmail]);
     }

@@ -51,7 +51,7 @@ class Challenger
     {
         Assert::allStringNotEmpty(
             $domains,
-            'challengeDomains::$domains expected an array of non-empty string. Got: %s'
+             'challengeDomains::$domains expected an array of non-empty string. Got: %s'
         );
 
         foreach (array_unique($domains) as $domain) {
@@ -70,12 +70,12 @@ class Challenger
     {
         Assert::stringNotEmpty($domain, 'challengeDomain::$domain expected a non-empty string. Got: %s');
 
-        $challenge = $this->client->requestChallenge($domain);
+        $challenge = $this->client->requestAuthorization($domain);
         $challengeEvent = new ChallengeEvent($challenge);
         $this->dispatcher->dispatch(AcmePhpBundleEvents::CHALLENGE_REQUESTED, $challengeEvent);
 
         try {
-            $this->client->checkChallenge($challenge);
+            $this->client->challengeAuthorization($challenge);
             $this->dispatcher->dispatch(AcmePhpBundleEvents::CHALLENGE_ACCEPTED, $challengeEvent);
         } catch (\Exception $e) {
             $this->dispatcher->dispatch(AcmePhpBundleEvents::CHALLENGE_REJECTED, $challengeEvent);

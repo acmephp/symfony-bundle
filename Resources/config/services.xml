@@ -21,10 +21,10 @@
                  public="false">
             <argument type="service" id="acme_php.certificate.storage_factory"/>
             <argument type="service">
-                <service id="acme_php.certificate.certificate_parser" class="AcmePhp\Bundle\Acme\Certificate\Parser\CertificateParser" public="false"/>
+                <service class="AcmePhp\Ssl\Parser\CertificateParser"/>
             </argument>
             <argument type="service" id="acme_php.certificate.certificate_formatter"/>
-            <argument/>  <!-- Formatters -->
+            <argument>cert.pem</argument>
         </service>
 
         <service id="acme_php.certificate.storage_factory"
@@ -39,27 +39,36 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
-        <!-- Formatters -->
-        <service id="acme_php.certificate.certificate_formatter" class="AcmePhp\Bundle\Acme\Certificate\Formatter\CertificateFormatter" public="false">
-            <tag name="acme_php.certificate_formatter"/>
+        <!-- Formatter -->
+        <service id="acme_php.certificate.certificate_formatter"
+                 class="AcmePhp\Ssl\Formatter\CertificateFormatter" public="false">
+            <tag name="acme_php.certificate_formatter" filename="cert.pem"/>
         </service>
-        <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\ChainFormatter" public="false">
-            <argument type="service" id="acme_php.core.certificate_authority"/>
-            <tag name="acme_php.certificate_formatter"/>
+        <service id="acme_php.certificate.issuer_chain_formatter"
+                 class="AcmePhp\Ssl\Formatter\IssuerChainFormatter" public="false">
+            <tag name="acme_php.certificate_formatter" filename="chain.pem"/>
         </service>
-        <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\FullChainFormatter" public="false">
-            <argument type="service" id="acme_php.core.certificate_authority"/>
-            <tag name="acme_php.certificate_formatter"/>
+        <service id="acme_php.certificate.full_chain_formatter"
+                 class="AcmePhp\Ssl\Formatter\FullChainFormatter" public="false">
+            <argument type="service" id="acme_php.certificate.certificate_formatter"/>
+            <argument type="service" id="acme_php.certificate.issuer_chain_formatter"/>
+            <tag name="acme_php.certificate_formatter" filename="fullchain.pem"/>
         </service>
-        <service class="AcmePhp\Bundle\Acme\Certificate\Formatter\CombinedFormatter" public="false">
-            <argument type="service" id="acme_php.core.certificate_authority"/>
-            <tag name="acme_php.certificate_formatter"/>
+        <service id="acme_php.certificate.keypair_formatter"
+                 class="AcmePhp\Ssl\Formatter\KeyPairFormatter" public="false">
+            <tag name="acme_php.certificate_formatter" filename="key.pem"/>
+        </service>
+        <service id="acme_php.certificate.combined_formatter"
+                 class="AcmePhp\Ssl\Formatter\CombinedFormatter" public="false">
+            <argument type="service" id="acme_php.certificate.full_chain_formatter"/>
+            <argument type="service" id="acme_php.certificate.keypair_formatter"/>
+            <tag name="acme_php.certificate_formatter" filename="combined.pem"/>
         </service>
 
         <!-- KeyPair -->
         <service id="acme_php.key_pair.domain_provider_factory"
                  class="AcmePhp\Bundle\Acme\KeyPair\DomainKeyPairProviderFactory" public="false">
-            <argument type="service" id="acme_php.core.key_pair_manager"/>
+            <argument type="service" id="acme_php.core.key_pair_generator"/>
             <argument type="service" id="acme_php.key_pair.domain_storage_factory"/>
             <call method="setLogger">
                 <argument type="service" id="acme_php.logger"/>
@@ -69,22 +78,21 @@
         <service id="acme_php.key_pair.domain_storage_factory"
                  class="AcmePhp\Bundle\Acme\KeyPair\Storage\DomainKeyPairStorageFactory" public="false">
             <argument type="service" id="acme_php.tools.filesystem"/>
-            <argument type="service" id="acme_php.core.key_pair_manager"/>
             <argument>%acme_php.certificate_dir%/domains</argument>
         </service>
 
         <service id="acme_php.key_pair.account_provider"
                  class="AcmePhp\Bundle\Acme\KeyPair\AccountKeyPairProvider"
                  public="false">
-            <argument type="service" id="acme_php.core.key_pair_manager"/>
+            <argument type="service" id="acme_php.core.key_pair_generator"/>
             <argument type="service">
                 <service class="AcmePhp\Bundle\Acme\KeyPair\Storage\KeyPairStorage">
                     <argument type="service" id="acme_php.tools.filesystem"/>
-                    <argument type="service" id="acme_php.core.key_pair_manager"/>
                     <argument>%acme_php.certificate_dir%/account</argument>
                 </service>
             </argument>
             <argument type="service" id="acme_php.core.acme_client_factory"/>
+            <argument type="service" id="acme_php.core.certificate_authority"/>
             <argument>%acme_php.contact_email%</argument>
             <call method="setLogger">
                 <argument type="service" id="acme_php.logger"/>
@@ -102,11 +110,11 @@
         </service>
 
         <!-- Core -->
-        <service id="acme_php.core.key_pair_manager" class="AcmePhp\Core\Ssl\KeyPairManager"/>
+        <service id="acme_php.core.key_pair_generator" class="AcmePhp\Ssl\Generator\KeyPairGenerator" public="false"/>
         <service id="acme_php.core.acme_client" class="AcmePhp\Core\AcmeClient" public="false">
             <factory service="acme_php.core.acme_client_factory" method="createAcmeClient"/>
             <argument type="service">
-                <service class="AcmePhp\Core\Ssl\KeyPair">
+                <service class="AcmePhp\Ssl\KeyPair">
                     <factory service="acme_php.key_pair.account_provider" method="getOrCreateKeyPair"/>
                 </service>
             </argument>
@@ -115,9 +123,25 @@
         <service id="acme_php.core.acme_client_factory" class="AcmePhp\Bundle\Acme\CertificateAuthority\ClientFactory"
                  public="false">
             <argument type="service" id="acme_php.core.certificate_authority"/>
-            <call method="setLogger">
-                <argument type="service" id="acme_php.logger"/>
-            </call>
+            <argument type="service">
+                <service class="AcmePhp\Core\Http\SecureHttpClientFactory">
+                    <argument type="service">
+                        <service class="GuzzleHttp\Client"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Core\Http\Base64SafeEncoder"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Ssl\Parser\KeyParser"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Ssl\Signer\DataSigner"></service>
+                    </argument>
+                    <argument type="service">
+                        <service class="AcmePhp\Core\Http\ServerErrorHandler"></service>
+                    </argument>
+                </service>
+            </argument>
         </service>
 
         <!-- Certificate Autorities -->

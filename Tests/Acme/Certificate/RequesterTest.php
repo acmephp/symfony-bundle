@@ -11,18 +11,19 @@
 
 namespace AcmePhp\Bundle\Tests\Acme\Certificate;
 
-use AcmePhp\Bundle\Acme\Certificate\CertificateMetadata;
 use AcmePhp\Bundle\Acme\Certificate\CertificateRepository;
 use AcmePhp\Bundle\Acme\Certificate\Requester;
 use AcmePhp\Bundle\Acme\Domain\Challenger;
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
 use AcmePhp\Bundle\Acme\KeyPair\DomainKeyPairProviderFactory;
 use AcmePhp\Bundle\Acme\KeyPair\KeyPairProvider;
-use AcmePhp\Bundle\Event\CertificateEvent;
+use AcmePhp\Bundle\Event\CertificateResponseEvent;
 use AcmePhp\Core\AcmeClient;
-use AcmePhp\Core\Ssl\Certificate;
-use AcmePhp\Core\Ssl\CSR;
-use AcmePhp\Core\Ssl\KeyPair;
+use AcmePhp\Ssl\Certificate;
+use AcmePhp\Ssl\CertificateRequest;
+use AcmePhp\Ssl\CertificateResponse;
+use AcmePhp\Ssl\DistinguishedName;
+use AcmePhp\Ssl\KeyPair;
+use AcmePhp\Ssl\ParsedCertificate;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -69,13 +70,11 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
     public function test requestCertificate triggers a new challenge when needed()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
         $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
-        $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
+        $dummyCertificateResponse = $this->prophesize(CertificateResponse::class)->reveal();
 
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
-
-        $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(false);
+        $this->mockCertificateRepository->hasCertificate($dummyDistinguishedName)->willReturn(false);
         $this->mockChallenger->challengeDomains([$dummyDomain])->shouldBeCalled();
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
@@ -84,25 +83,43 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         );
         $mockKeyPairProvider->getOrCreateKeyPair()->shouldBeCalled()->willReturn($dummyDomainKeyPair);
 
-        $this->mockClient->requestCertificate($dummyDomain, $dummyDomainKeyPair, $dummyCsr)->shouldBeCalled(
-        )->willReturn($dummyCertificate);
+        $this->mockClient->requestCertificate(
+            $dummyDomain,
+            Argument::that(
+                function ($item) use ($dummyDistinguishedName, $dummyDomainKeyPair) {
+                    $this->assertInstanceOf(CertificateRequest::class, $item);
+                    $this->assertSame($dummyDistinguishedName, $item->getDistinguishedName());
+                    $this->assertSame($dummyDomainKeyPair, $item->getKeyPair());
 
-        $result = $this->service->requestCertificate($configuration);
-        $this->assertSame($dummyCertificate, $result);
+                    return true;
+                }
+            )
+        )->shouldBeCalled()->willReturn($dummyCertificateResponse);
+
+        $result = $this->service->requestCertificate($dummyDistinguishedName);
+        $this->assertSame($dummyCertificateResponse, $result);
     }
 
     public function test requestCertificate dont triggers a new challenge when needed()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
         $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
+        $dummyCertificateResponse = $this->prophesize(CertificateResponse::class)->reveal();
         $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyMetadata = new CertificateMetadata($dummyDomain, null, true, null, [$dummyDomain]);
+        $dummyParsedCertificate = new ParsedCertificate(
+            $dummyCertificate,
+            $dummyDomain,
+            null,
+            true,
+            null,
+            null,
+            null,
+            [$dummyDomain]
+        );
 
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
-
-        $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
-        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn($dummyMetadata);
+        $this->mockCertificateRepository->hasCertificate($dummyDistinguishedName)->willReturn(true);
+        $this->mockCertificateRepository->loadCertificate($dummyDistinguishedName)->willReturn($dummyParsedCertificate);
         $this->mockChallenger->challengeDomains()->shouldNotBeCalled();
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
@@ -111,28 +128,44 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         );
         $mockKeyPairProvider->getOrCreateKeyPair()->shouldBeCalled()->willReturn($dummyDomainKeyPair);
 
-        $this->mockClient->requestCertificate($dummyDomain, $dummyDomainKeyPair, $dummyCsr)->shouldBeCalled(
-        )->willReturn($dummyCertificate);
+        $this->mockClient->requestCertificate($dummyDomain, Argument::any())->shouldBeCalled()->willReturn(
+            $dummyCertificateResponse
+        );
 
-        $result = $this->service->requestCertificate($configuration);
-        $this->assertSame($dummyCertificate, $result);
+        $result = $this->service->requestCertificate($dummyDistinguishedName);
+        $this->assertSame($dummyCertificateResponse, $result);
     }
 
     public function test requestCertificate triggers a new challenge for extra domains()
     {
         $dummyDomain = uniqid();
         $dummyAlternativeDomain = uniqid();
-        $mockCsr = $this->prophesize(CSR::class);
-        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
         $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyMetadata = new CertificateMetadata($dummyDomain, null, true, null, [$dummyDomain]);
+        $dummyParsedCertificate = new ParsedCertificate(
+            $dummyCertificate,
+            $dummyDomain,
+            null,
+            true,
+            null,
+            null,
+            null,
+            [$dummyDomain]
+        );
+        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
+        $dummyCertificateResponse = $this->prophesize(CertificateResponse::class)->reveal();
+        $dummyDistinguishedName = new DistinguishedName(
+            $dummyDomain,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [$dummyDomain, $dummyAlternativeDomain]
+        );
 
-        $mockCsr->getSubjectAlternativeNames()->willReturn([$dummyDomain, $dummyAlternativeDomain]);
-
-        $configuration = new DomainConfiguration($dummyDomain, $mockCsr->reveal());
-
-        $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
-        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn($dummyMetadata);
+        $this->mockCertificateRepository->hasCertificate($dummyDistinguishedName)->willReturn(true);
+        $this->mockCertificateRepository->loadCertificate($dummyDistinguishedName)->willReturn($dummyParsedCertificate);
         $this->mockChallenger->challengeDomains([$dummyAlternativeDomain])->shouldBeCalled();
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
@@ -141,25 +174,34 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         );
         $mockKeyPairProvider->getOrCreateKeyPair()->shouldBeCalled()->willReturn($dummyDomainKeyPair);
 
-        $this->mockClient->requestCertificate($dummyDomain, $dummyDomainKeyPair, $mockCsr->reveal())->shouldBeCalled(
-        )->willReturn($dummyCertificate);
+        $this->mockClient->requestCertificate($dummyDomain, Argument::any())->shouldBeCalled()->willReturn(
+            $dummyCertificateResponse
+        );
 
-        $result = $this->service->requestCertificate($configuration);
-        $this->assertSame($dummyCertificate, $result);
+        $result = $this->service->requestCertificate($dummyDistinguishedName);
+        $this->assertSame($dummyCertificateResponse, $result);
     }
 
     public function test requestCertificate notice the logger()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
-        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
         $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyMetadata = new CertificateMetadata($dummyDomain, null, true, null, [$dummyDomain]);
+        $dummyParsedCertificate = new ParsedCertificate(
+            $dummyCertificate,
+            $dummyDomain,
+            null,
+            true,
+            null,
+            null,
+            null,
+            [$dummyDomain]
+        );
+        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
+        $dummyCertificateResponse = $this->prophesize(CertificateResponse::class)->reveal();
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
 
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
-
-        $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
-        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn($dummyMetadata);
+        $this->mockCertificateRepository->hasCertificate($dummyDistinguishedName)->willReturn(true);
+        $this->mockCertificateRepository->loadCertificate($dummyDistinguishedName)->willReturn($dummyParsedCertificate);
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
         $this->mockKeyPairFactory->createKeyPairProvider($dummyDomain)->shouldBeCalled()->willReturn(
@@ -167,8 +209,9 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         );
         $mockKeyPairProvider->getOrCreateKeyPair()->shouldBeCalled()->willReturn($dummyDomainKeyPair);
 
-        $this->mockClient->requestCertificate($dummyDomain, $dummyDomainKeyPair, $dummyCsr)->shouldBeCalled(
-        )->willReturn($dummyCertificate);
+        $this->mockClient->requestCertificate($dummyDomain, Argument::any())->shouldBeCalled()->willReturn(
+            $dummyCertificateResponse
+        );
 
         $mockLogger = $this->prophesize(LoggerInterface::class);
         $this->service->setLogger($mockLogger->reveal());
@@ -177,21 +220,29 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
             ['domain' => $dummyDomain]
         )->shouldBeCalled();
 
-        $this->service->requestCertificate($configuration);
+        $this->service->requestCertificate($dummyDistinguishedName);
     }
 
     public function test requestCertificate trigger event()
     {
         $dummyDomain = uniqid();
-        $dummyCsr = $this->prophesize(CSR::class)->reveal();
-        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
         $dummyCertificate = $this->prophesize(Certificate::class)->reveal();
-        $dummyMetadata = new CertificateMetadata($dummyDomain, null, true, null, [$dummyDomain]);
+        $dummyParsedCertificate = new ParsedCertificate(
+            $dummyCertificate,
+            $dummyDomain,
+            null,
+            true,
+            null,
+            null,
+            null,
+            [$dummyDomain]
+        );
+        $dummyDomainKeyPair = $this->prophesize(KeyPair::class)->reveal();
+        $dummyCertificateResponse = $this->prophesize(CertificateResponse::class)->reveal();
+        $dummyDistinguishedName = new DistinguishedName($dummyDomain);
 
-        $configuration = new DomainConfiguration($dummyDomain, $dummyCsr);
-
-        $this->mockCertificateRepository->hasCertificate($configuration)->willReturn(true);
-        $this->mockCertificateRepository->loadCertificate($configuration)->willReturn($dummyMetadata);
+        $this->mockCertificateRepository->hasCertificate($dummyDistinguishedName)->willReturn(true);
+        $this->mockCertificateRepository->loadCertificate($dummyDistinguishedName)->willReturn($dummyParsedCertificate);
 
         $mockKeyPairProvider = $this->prophesize(KeyPairProvider::class);
         $this->mockKeyPairFactory->createKeyPairProvider($dummyDomain)->shouldBeCalled()->willReturn(
@@ -199,19 +250,22 @@ class RequesterTest extends \PHPUnit_Framework_TestCase
         );
         $mockKeyPairProvider->getOrCreateKeyPair()->shouldBeCalled()->willReturn($dummyDomainKeyPair);
 
-        $this->mockClient->requestCertificate($dummyDomain, $dummyDomainKeyPair, $dummyCsr)->shouldBeCalled(
-        )->willReturn($dummyCertificate);
+        $this->mockClient->requestCertificate($dummyDomain, Argument::any())->shouldBeCalled()->willReturn(
+            $dummyCertificateResponse
+        );
 
         $this->mockDispatcher->dispatch(
             'acme_php.certificate.requested',
             Argument::that(
-                function ($item) use ($dummyCertificate) {
-                    return $item instanceof CertificateEvent
-                    && $item->getCertificate() === $dummyCertificate;
+                function ($item) use ($dummyCertificateResponse) {
+                    $this->assertInstanceOf(CertificateResponseEvent::class, $item);
+                    $this->assertSame($dummyCertificateResponse, $item->getCertificateResponse());
+
+                    return true;
                 }
             )
         )->shouldBeCalled();
 
-        $this->service->requestCertificate($configuration);
+        $this->service->requestCertificate($dummyDistinguishedName);
     }
 }

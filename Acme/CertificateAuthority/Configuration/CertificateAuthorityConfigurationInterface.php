@@ -23,7 +23,7 @@ interface CertificateAuthorityConfigurationInterface
      *
      * @return string
      */
-    public function getBaseUri();
+    public function getDirectoryUri();
 
     /**
      * Return the agreement/license document URL.
@@ -31,11 +31,4 @@ interface CertificateAuthorityConfigurationInterface
      * @return string
      */
     public function getAgreement();
-
-    /**
-     * Returns an array of certificates composing the chain of certificates.
-     *
-     * @return string[]
-     */
-    public function getCertificatesChain();
 }

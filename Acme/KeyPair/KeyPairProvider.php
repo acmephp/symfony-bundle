@@ -12,8 +12,8 @@
 namespace AcmePhp\Bundle\Acme\KeyPair;
 
 use AcmePhp\Bundle\Acme\KeyPair\Storage\KeyPairStorage;
-use AcmePhp\Core\Ssl\KeyPair;
-use AcmePhp\Core\Ssl\KeyPairManager;
+use AcmePhp\Ssl\Generator\KeyPairGenerator;
+use AcmePhp\Ssl\KeyPair;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 
@@ -26,19 +26,19 @@ class KeyPairProvider
 {
     use LoggerAwareTrait;
 
-    /** @var KeyPairManager */
-    protected $manager;
+    /** @var KeyPairGenerator */
+    protected $generator;
 
     /** @var KeyPairStorage */
     protected $storage;
 
     /**
-     * @param KeyPairManager $manager
-     * @param KeyPairStorage $storage
+     * @param KeyPairGenerator $generator
+     * @param KeyPairStorage   $storage
      */
-    public function __construct(KeyPairManager $manager, KeyPairStorage $storage)
+    public function __construct(KeyPairGenerator $generator, KeyPairStorage $storage)
     {
-        $this->manager = $manager;
+        $this->generator = $generator;
         $this->storage = $storage;
 
         $this->logger = new NullLogger();
@@ -90,7 +90,7 @@ class KeyPairProvider
             ]
         );
 
-        $this->storeKeyPair($this->manager->generateKeyPair());
+        $this->storeKeyPair($this->generator->generateKeyPair());
     }
 
     /**

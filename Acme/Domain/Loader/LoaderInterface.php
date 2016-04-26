@@ -11,7 +11,7 @@
 
 namespace AcmePhp\Bundle\Acme\Domain\Loader;
 
-use AcmePhp\Bundle\Acme\Domain\DomainConfiguration;
+use AcmePhp\Ssl\DistinguishedName;
 
 /**
  * A loader in charge of retrieving DomainConfigurations.
@@ -23,7 +23,7 @@ interface LoaderInterface
     /**
      * Retrieve a list of DomainConfiguration.
      *
-     * @return DomainConfiguration[]
+     * @return DistinguishedName[]
      */
     public function load();
 }

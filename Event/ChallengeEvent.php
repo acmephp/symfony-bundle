@@ -11,7 +11,7 @@
 
 namespace AcmePhp\Bundle\Event;
 
-use AcmePhp\Core\Protocol\Challenge;
+use AcmePhp\Core\Protocol\AuthorizationChallenge;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -21,21 +21,21 @@ use Symfony\Component\EventDispatcher\Event;
  */
 class ChallengeEvent extends Event
 {
-    /** @var Challenge */
+    /** @var AuthorizationChallenge */
     private $challenge;
 
     /**
      * ChallengeEvent constructor.
      *
-     * @param Challenge $challenge
+     * @param AuthorizationChallenge $challenge
      */
-    public function __construct(Challenge $challenge)
+    public function __construct(AuthorizationChallenge $challenge)
     {
         $this->challenge = $challenge;
     }
 
     /**
-     * @return Challenge
+     * @return AuthorizationChallenge
      */
     public function getChallenge()
     {
